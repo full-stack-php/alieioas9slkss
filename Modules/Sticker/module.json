@@ -1,0 +1,11 @@
+{
+    "name": "Sticker",
+    "alias": "sticker",
+    "priority": 100,
+    "providers": [
+        "Modules\\Sticker\\Providers\\StickerServiceProvider",
+        "Modules\\Sticker\\Providers\\EventServiceProvider"
+    ],
+    "files": [
+    ]
+}

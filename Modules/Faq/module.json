@@ -1,0 +1,6 @@
+{
+    "name": "Faq",
+    "alias": "faq",
+    "description": "F.A.Q. data management",
+    "priority": 120
+}

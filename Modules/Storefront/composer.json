@@ -1,0 +1,24 @@
+{
+    "name": "korf_digital/storefront",
+    "description": "The Korf Storefront Theme.",
+    "authors": [
+        {
+            "name": "Digital AK",
+            "email": "digital.agency.k@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Modules\\Storefront\\": ""
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev"
+}

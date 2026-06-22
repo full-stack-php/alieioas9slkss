@@ -1,0 +1,33 @@
+.account-reviews-page {
+    .panel-header {
+        margin-bottom: 20px;
+    }
+    .account-review-product {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #f1f1f1;
+    }
+
+    .account-review-product-link {
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 1.35;
+        color: #292d32;
+        text-decoration: none;
+
+        &:hover {
+            color: var(--bs-primary);
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .account-review-product {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+}

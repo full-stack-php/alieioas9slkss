@@ -1,0 +1,9 @@
+{
+    "name": "QuestionAnswer",
+    "alias": "questionanswer",
+    "description": "The Korf Questions Answers Module.",
+    "priority": 100,
+    "providers": [
+        "Modules\\QuestionAnswer\\Providers\\QuestionAnswerServiceProvider"
+    ]
+}

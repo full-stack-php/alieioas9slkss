@@ -1,0 +1,15 @@
+#Meta
+.meta/
+.vscode/
+.idea/
+.github/
+.phpintel/
+*.sublime-project
+.DS_Store
+
+#Env
+.env
+
+#Dependencies
+node_modules/
+/vendor/

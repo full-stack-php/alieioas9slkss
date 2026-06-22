@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'title' => 'Title',
+    'sub_title' => 'Sub title',
+    'price_from' => 'Price from',
+    'price_text' => 'Price text',
+    'title_color' => 'Title color',
+    'sub_title_color' => 'Sub title color',
+    'price_from_color' => 'Price from color',
+    'price_text_color' => 'Price text color',
+    'call_to_action_url' => 'Call to Action URL',
+    'open_in_new_window' => 'Open in new window',
+    'caption_1_delay' => 'Delay',
+    'caption_1_effect' => 'Effect',
+    'caption_2_delay' => 'Delay',
+    'caption_2_effect' => 'Effect',
+    'call_to_action_delay' => 'Delay',
+    'call_to_action_effect' => 'Effect',
+    'name' => 'Name',
+    'speed' => 'Speed',
+    'autoplay' => 'Autoplay',
+    'autoplay_speed' => 'Autoplay Speed',
+    'fade' => 'Fade',
+    'dots' => 'Dots',
+    'arrows' => 'Arrows',
+];

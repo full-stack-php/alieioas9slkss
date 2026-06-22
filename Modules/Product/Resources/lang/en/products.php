@@ -1,0 +1,151 @@
+<?php
+
+return [
+    'product' => 'Product',
+    'products' => 'Products',
+    'save' => 'Save',
+    'save_and_exit' => 'Save & Exit',
+    'save_and_edit' => 'Save & Edit',
+
+    'section' => [
+        'expand_all' => 'Expand All',
+        'collapse_all' => 'Collapse All',
+        'order_saved' => 'Order saved',
+    ],
+
+    'table' => [
+        'thumbnail' => 'Thumbnail',
+        'name' => 'Name',
+        'price' => 'Price',
+        'stock' => 'Stock',
+    ],
+
+    'tabs' => [
+        'group' => [
+            'basic_information' => 'Basic Information',
+            'advanced_information' => 'Advanced Information',
+        ],
+        'general' => 'General',
+        'price' => 'Price',
+        'inventory' => 'Inventory',
+        'images' => 'Images',
+        'seo' => 'SEO',
+        'related_products' => 'Related Products',
+        'colors' => 'Variations',
+        'cross_sells' => 'Cross-Sells',
+        'additional' => 'Additional',
+        'packaging' => 'Packagings',
+        'gift_packaging' => 'Gift packing',
+        'gifts' => 'Gifts',
+        'bundles' => 'Product bundles',
+        'videos' => 'Videos',
+    ],
+
+    'attributes' => [
+        'attribute' => 'Attribute',
+        'values' => 'Values',
+        'add_attribute' => 'Add Attribute',
+    ],
+
+    'options' => [
+        'new_option' => 'New Option',
+        'add_option' => 'Add Option',
+        'add_row' => 'Add Row',
+        'insert' => 'Insert',
+        'option_inserted' => 'Option inserted',
+    ],
+
+    'form' => [
+        'the_product_won\'t_be_shipped' => 'The product won\'t be shipped',
+        'enable_the_product' => 'Enable the product',
+        'enable_the_product_option_mirrored' => 'Enable mirrored product options',
+        'base_image' => 'Base Image',
+        'additional_images' => 'Additional Images',
+        'special_price_types' => [
+            'fixed' => 'Fixed',
+            'percent' => 'Percent',
+        ],
+        'manage_stock_states' => [
+            0 => 'Don\'t Track Inventory',
+            1 => 'Track Inventory',
+        ],
+        'stock_availability_states' => [
+            1 => 'In Stock',
+            0 => 'Out of Stock',
+        ],
+        'gift' => [
+            'add_gift' => 'Add gift',
+            'select_product' => 'Select product',
+            'price' => 'Price',
+            'min_qty' => 'Min. qty.',
+            'search_placeholder' => 'Enter product name',
+            'no_results' => 'No results',
+            'select' => 'Select',
+        ],
+        'bundle' => [
+            'main_product_settings' => 'Current product settings',
+            'main_product_qty' => 'Current product qty.',
+            'bundle_product_qty' => 'Bundle product qty.',
+            'price' => 'Price',
+            'special_price' => 'Special price',
+            'bundle_product' => 'Bundle product',
+            'bundle_product_settings' => 'Bundle product settings',
+            'search_placeholder' => 'Enter product name',
+            'no_results' => 'No results',
+            'select' => 'Select',
+            'add_bundle' => 'Add bundle',
+        ],
+        'packaging' => [
+          'name' => 'Name',
+          'qty' => 'Qty pkg.',
+          'price' => 'Price each item',
+          'special_price' => 'Special Price',
+          'special_price_type' => 'Special Price Type',
+          'add_new_packaging' => 'Add new packaging',
+          'add_new_packaging_gift' => 'Add new  gift packaging',
+          'delete_packaging' => 'Remove packaging',
+          'select' => 'Select',
+        ],
+        'options' => [
+            'name' => 'Name',
+            'type' => 'Type',
+            'is_required' => 'Required',
+            'label' => 'Label',
+            'price' => 'Price',
+            'price_type' => 'Price Type',
+
+            'option_types' => [
+                'please_select' => 'Please Select',
+                'text' => 'Text',
+                'field' => 'Field',
+                'textarea' => 'Textarea',
+                'select' => 'Select',
+                'dropdown' => 'Dropdown',
+                'checkbox' => 'Checkbox',
+                'checkbox_custom' => 'Custom Checkbox',
+                'radio' => 'Radio Button',
+                'radio_custom' => 'Custom Radio Button',
+                'multiple_select' => 'Multiple Select',
+                'date' => 'Date',
+                'date_time' => 'Date & Time',
+                'time' => 'Time',
+            ],
+
+            'price_types' => [
+                'fixed' => 'Fixed',
+                'percent' => 'Percent',
+            ],
+            'base_image' => 'Base Image',
+            'additional_images' => 'Additional Images',
+        ],
+        'video' => [
+            'main' => 'Main',
+            'title' => 'Video Title',
+            'url' => 'YouTube URL',
+            'url_placeholder' => 'https://www.youtube.com/watch?v=...',
+            'sort_order' => 'Sort Order',
+            'add_video' => 'Add Video',
+            'delete' => 'Delete',
+        ],
+    ],
+];

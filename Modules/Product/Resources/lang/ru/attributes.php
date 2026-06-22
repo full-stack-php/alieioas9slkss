@@ -1,0 +1,41 @@
+<?php
+
+return [
+    'name' => 'Наименование',
+    'slug' => 'URL',
+    'description' => 'Описание',
+    'h1_name' => 'HTML-тег H1',
+    'brand_id' => 'Бренд',
+    'manufacturer_id' => 'Производитель',
+    'main_category_id' => 'Главная категория',
+
+    'categories' => 'Категории',
+    'is_mirrored' => 'Зеркальные опции',
+    'is_active' => 'Статус',
+    'price' => 'Цена',
+    'special_price' => 'Специальная цена',
+    'special_price_type' => 'Тип специальной цены',
+    'special_price_start' => 'Дата начала',
+    'special_price_end' => 'Дата окончания',
+    'sku' => 'Артикул',
+    'manage_stock' => 'Управление запасами',
+    'qty' => 'Количество',
+    'in_stock' => 'Наличие на складе',
+    'new_from' => 'Новинка от',
+    'new_to' => 'Новинка до',
+    'colors' => 'Цвета',
+    'cross_sells' => 'Перекрестные продажи',
+    'related_products' => 'Сопутствующие товары',
+    'notice' => 'Уведомление на товаре',
+    'attributes' => [
+        '*.attribute_id' => 'Атрибут',
+        '*.values' => 'Значения',
+    ],
+    'options' => [
+        '*.name' => 'Название',
+        '*.type' => 'Тип',
+        '*.values.*.label' => 'Значение',
+        '*.values.*.price' => 'Цена',
+        '*.values.*.price_type' => 'Тип цены',
+    ],
+];

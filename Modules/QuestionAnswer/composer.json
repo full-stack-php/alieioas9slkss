@@ -1,0 +1,27 @@
+{
+    "name": "korf/questionanswer",
+    "description": "The Korf Questions Answers Module.",
+    "authors": [
+        {
+            "name": "Digital AK",
+            "email": "digital.agency.k@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\QuestionAnswer\\": ""
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev"
+}

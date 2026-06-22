@@ -1,0 +1,9 @@
+{
+    "name": "Review",
+    "alias": "review",
+    "description": "The Korf Review Module.",
+    "priority": 100,
+    "providers": [
+        "Modules\\Review\\Providers\\ReviewServiceProvider"
+    ]
+}

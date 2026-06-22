@@ -1,0 +1,3 @@
+@push('globals')
+
+@endpush

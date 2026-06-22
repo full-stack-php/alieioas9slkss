@@ -1,0 +1,27 @@
+{
+    "name": "korf_digital/blog",
+    "description": "",
+    "authors": [
+        {
+            "name": "Digital AK",
+            "email": "digital.agency.k@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "require": {
+        "php": "^8.2.0",
+        "typicms/nestablecollection": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Blog\\": ""
+        }
+    }
+}

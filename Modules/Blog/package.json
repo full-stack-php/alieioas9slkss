@@ -1,0 +1,9 @@
+{
+    "name": "blog-module",
+    "version": "1.0.0",
+    "private": true,
+    "devDependencies": {},
+    "dependencies": {
+        "jstree": "^3.3.17"
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "name": "Order",
+    "alias": "order",
+    "description": "The Korf Order Module.",
+    "priority": 100,
+    "providers": [
+        "Modules\\Order\\Providers\\OrderServiceProvider",
+        "Modules\\Order\\Providers\\OrderStatusServiceProvider",
+        "Modules\\Order\\Providers\\EventServiceProvider"
+    ]
+}
