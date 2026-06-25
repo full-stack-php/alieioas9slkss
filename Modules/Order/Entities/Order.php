@@ -193,7 +193,7 @@ class Order extends Model
         $savedOrderProductsMap = [];
 
         foreach ($cartItems as $cartItem) {
-            $attributes = $cartItem->attributes ?? [];
+            $attributes = $this->cartItemAttributes($cartItem);
             $parentId = $attributes['parent_id'] ?? null;
 
             if ($parentId) {
@@ -202,7 +202,7 @@ class Order extends Model
 
             $packagingId = !empty($cartItem->packaging->id) ? $cartItem->packaging->id : null;
             $bundleId = $attributes['bundle_id'] ?? null;
-            $isGift = $cartItem->isGift();
+            $isGift = (bool) ($attributes['is_gift'] ?? $cartItem->isGift());
 
             $orderProduct = $this->products()->create([
                 'product_id' => $cartItem->product->id,
@@ -216,22 +216,27 @@ class Order extends Model
             ]);
 
             $savedOrderProductsMap[$cartItem->id] = $orderProduct->id;
+
             $orderProduct->storeOptions($cartItem->options);
         }
 
         foreach ($cartItems as $cartItem) {
-            $attributes = $cartItem->attributes ?? [];
-            $parentIdStr = $attributes['parent_id'] ?? null;
+            $attributes = $this->cartItemAttributes($cartItem);
+            $parentCartItemId = $attributes['parent_id'] ?? null;
 
-            if (!$parentIdStr) {
+            if (!$parentCartItemId) {
+                continue;
+            }
+
+            $realParentId = $savedOrderProductsMap[$parentCartItemId] ?? null;
+
+            if (!$realParentId) {
                 continue;
             }
 
             $packagingId = !empty($cartItem->packaging->id) ? $cartItem->packaging->id : null;
             $bundleId = $attributes['bundle_id'] ?? null;
-            $isGift = ($attributes['is_gift'] ?? false) || ($attributes['is_gift_packaging'] ?? false);
-
-            $realParentId = $savedOrderProductsMap[$parentIdStr] ?? null;
+            $isGift = (bool) ($attributes['is_gift'] ?? $cartItem->isGift());
 
             $orderProduct = $this->products()->create([
                 'product_id' => $cartItem->product->id,
@@ -246,6 +251,25 @@ class Order extends Model
 
             $orderProduct->storeOptions($cartItem->options);
         }
+    }
+
+    private function cartItemAttributes(CartItem $cartItem): array
+    {
+        $attributes = $cartItem->attributes ?? [];
+
+        if ($attributes instanceof \Illuminate\Support\Collection) {
+            return $attributes->all();
+        }
+
+        if (is_object($attributes) && method_exists($attributes, 'all')) {
+            return $attributes->all();
+        }
+
+        if (is_array($attributes)) {
+            return $attributes;
+        }
+
+        return (array) $attributes;
     }
 
 
