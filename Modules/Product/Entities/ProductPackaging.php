@@ -2,33 +2,61 @@
 
 namespace Modules\Product\Entities;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Support\Eloquent\Model;
 use Modules\Support\Eloquent\Translatable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Support\Money;
 
 class ProductPackaging extends Model
 {
     use SoftDeletes, Translatable;
 
-    protected $fillable = ['product_id', 'qty', 'price', 'special_price', 'special_price_type', 'gift_id', 'is_gift'];
+    protected $fillable = [
+        'product_id',
+        'qty',
+        'price',
+        'special_price',
+        'special_price_type',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'qty' => 'integer',
+        'price' => 'float',
+        'special_price' => 'float',
+    ];
 
     public array $translatedAttributes = ['name'];
 
     protected $with = ['translations'];
 
-
-    public function gift()
-    {
-        return $this->belongsTo(self::class, 'gift_id')->where('is_gift', true);
-    }
-    public function product()
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
+    public function gifts(): HasMany
+    {
+        return $this->hasMany(ProductGift::class, 'parent_packaging_id')
+            ->with([
+                'giftProduct.translations',
+                'giftPackaging.translations',
+                'options.productOption',
+                'options.productOptionValue',
+            ]);
+    }
+
+    public function activeGifts(): HasMany
+    {
+        return $this->gifts()->where('is_active', true);
+    }
+
     public function getFormattedPriceAttribute()
     {
-        $baseMoney = \Modules\Support\Money::inDefaultCurrency($this->price * $this->qty);
+        $baseMoney = Money::inDefaultCurrency($this->price * $this->qty);
         $formattedBase = $baseMoney->convertToCurrentCurrency()->format();
 
         $specialAmount = $this->calculateSpecialAmount();
@@ -37,7 +65,7 @@ class ProductPackaging extends Model
             return "<span class='new-price'>{$formattedBase}</span>";
         }
 
-        $formattedSpecial = \Modules\Support\Money::inDefaultCurrency($specialAmount * $this->qty)
+        $formattedSpecial = Money::inDefaultCurrency($specialAmount * $this->qty)
             ->convertToCurrentCurrency()
             ->format();
 
@@ -49,7 +77,9 @@ class ProductPackaging extends Model
         $price = (float) $this->price;
         $special = (float) $this->special_price;
 
-        if ($special <= 0) return null;
+        if ($special <= 0) {
+            return null;
+        }
 
         if ($this->special_price_type === 'percent') {
             return $price - ($price * ($special / 100));

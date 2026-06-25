@@ -67,63 +67,6 @@ trait EloquentRelations
             ->orderBy('position');
     }
 
-    public function gifts(): BelongsToMany
-    {
-        return $this->belongsToMany(static::class, 'product_gifts', 'product_id', 'gift_product_id')
-            ->withPivot(['price', 'min_qty', 'deleted_at'])
-            ->wherePivotNull('deleted_at')
-            ->withTimestamps();
-    }
-
-    public function productGifts(): HasMany
-    {
-        return $this->hasMany(ProductGift::class, 'product_id');
-    }
-
-    public function activeGifts(): HasMany
-    {
-        return $this->hasMany(ProductGift::class, 'product_id')
-            ->whereHas('giftProduct', function ($query) {
-                $query->where('is_active', true)
-                    ->where('in_stock', true);
-            });
-    }
-
-    public function allPackagings(): HasMany
-    {
-        return $this->hasMany(ProductPackaging::class)
-        ->with(['translations' => function ($query) {
-            $query->withoutGlobalScope('locale');
-        }]);
-    }
-
-    public function packagings(): HasMany
-    {
-        return $this->hasMany(ProductPackaging::class)
-            ->withoutGlobalScope('locale')
-            ->with([
-                'translations' => function ($query) {
-                    $query->withoutGlobalScope('locale');
-                },
-                'gift.translations'
-            ])
-            ->where('is_gift', false)
-            ->orderBy('price', 'asc');
-    }
-
-    /**
-     * Только подарочные упаковки.
-     */
-    public function giftPackagings(): HasMany
-    {
-        return $this->hasMany(ProductPackaging::class)
-            ->withoutGlobalScope('locale')
-            ->with(['translations' => function ($query) {
-                $query->withoutGlobalScope('locale');
-            }])
-            ->where('is_gift', true);
-    }
-
     public function relatedProducts(): BelongsToMany
     {
         return $this->belongsToMany(static::class, 'related_products', 'product_id', 'related_product_id');
@@ -218,6 +161,93 @@ trait EloquentRelations
     {
         return $this->hasOne(ProductVideo::class)
             ->where('is_main', true);
+    }
+
+    public function gifts(): BelongsToMany
+    {
+        return $this->belongsToMany(static::class, 'product_gifts', 'parent_product_id', 'gift_product_id')
+            ->withoutGlobalScope('active')
+            ->withPivot([
+                'parent_packaging_id',
+                'gift_packaging_id',
+                'price',
+                'min_qty',
+                'is_active',
+                'deleted_at',
+            ])
+            ->wherePivotNull('deleted_at')
+            ->where('products.is_active', true)
+            ->where('products.in_stock', true)
+            ->withTimestamps();
+    }
+
+    public function productGifts(): HasMany
+    {
+        return $this->hasMany(ProductGift::class, 'parent_product_id')
+            ->with([
+                'giftProduct.translations',
+                'giftPackaging.translations',
+                'options.productOption',
+                'options.productOptionValue',
+            ]);
+    }
+
+    public function activeGifts(): HasMany
+    {
+        return $this->hasMany(ProductGift::class, 'parent_product_id')
+            ->where('product_gifts.is_active', true)
+            ->whereHas('giftProduct', function ($query) {
+                $query->withoutGlobalScope('active')
+                    ->where('products.is_active', true)
+                    ->where('products.in_stock', true);
+            });
+    }
+
+    public function allPackagings(): HasMany
+    {
+        return $this->hasMany(ProductPackaging::class)
+            ->with([
+                'translations' => function ($query) {
+                    $query->withoutGlobalScope('locale');
+                },
+                'gifts.giftProduct.translations',
+                'gifts.giftPackaging.translations',
+                'gifts.options.productOption',
+                'gifts.options.productOptionValue',
+            ]);
+    }
+
+    public function packagings(): HasMany
+    {
+        return $this->hasMany(ProductPackaging::class)
+            ->withoutGlobalScope('locale')
+            ->with([
+                'translations' => function ($query) {
+                    $query->withoutGlobalScope('locale');
+                },
+                'gifts.giftProduct.translations',
+                'gifts.giftPackaging.translations',
+                'gifts.options.productOption',
+                'gifts.options.productOptionValue',
+            ])
+            ->where('is_active', true)
+            ->orderBy('price', 'asc');
+    }
+
+    public function adminPackagings(): HasMany
+    {
+        return $this->hasMany(ProductPackaging::class)
+            ->withoutGlobalScope('locale')
+            ->with([
+                'translations' => function ($query) {
+                    $query->withoutGlobalScope('locale');
+                },
+                'gifts.giftProduct.translations',
+                'gifts.giftPackaging.translations',
+                'gifts.options.productOption',
+                'gifts.options.productOptionValue',
+            ])
+            ->orderBy('price', 'asc');
     }
 
 }

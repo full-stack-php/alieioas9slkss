@@ -7,8 +7,6 @@ use Modules\Cart\CartItem;
 use Illuminate\Http\Request;
 use Modules\Cart\Facades\Cart;
 use Modules\Product\Entities\Product;
-use Modules\FlashSale\Entities\FlashSale;
-use Modules\Product\Entities\ProductVariant;
 
 class CheckItemStock
 {
@@ -19,18 +17,30 @@ class CheckItemStock
     public function __construct(Request $request)
     {
         if ($request->routeIs('cart.items.store')) {
-            $this->product = $request->product_id ? $this->getProduct($request->product_id) : null;
+            $this->product = $request->product_id
+                ? $this->getProduct($request->product_id)
+                : null;
 
-            $this->cartItem = Cart::items()->get(
-                md5("product_id.{$request->product_id}:options." . serialize(array_filter($request->options ?? [])))
+            $options = array_filter($request->options ?? []);
+            $packagingId = $request->packaging_id ?: 'none';
+
+            $cartItemId = md5(
+                "product_id.{$request->product_id}:options."
+                . serialize($options)
+                . ":pkg."
+                . $packagingId
             );
+
+            $this->cartItem = Cart::items()->get($cartItemId);
         }
 
         if ($request->routeIs('cart.items.update')) {
             $this->cartItem = Cart::items()->get($request->route('id') ?? $request->id);
+
             if ($this->cartItem) {
                 $this->cartItem->refreshStock();
-                // ВАЖНО: берем item (модель из БД), а не product (легкий объект)
+
+                // Берём реальную модель товара из БД, а не лёгкий объект корзины.
                 $this->product = $this->cartItem->item;
             }
         }
@@ -50,7 +60,6 @@ class CheckItemStock
                 'cart' => Cart::instance(),
             ], 400);
         }
-
 
         if (!$this->hasStock()) {
             return response()->json([
@@ -81,26 +90,91 @@ class CheckItemStock
             ->find($id);
     }
 
-
     private function hasStock(): bool
     {
         if (!$this->item->manage_stock) {
             return true;
         }
 
-        $requestedQty = (int) request('qty', 1);
+        $requestedStockQty = $this->getRequestedStockQty();
 
-        if ($this->cartItem && request()->routeIs('cart.items.store')) {
-            $addedCartQty = Cart::addedQty($this->cartItem);
+        if (request()->routeIs('cart.items.store')) {
+            $alreadyAddedQty = $this->getAlreadyAddedProductQty();
 
-            if ($this->item->qty >= $addedCartQty + $requestedQty) {
-                return true;
-            }
-
-            Cart::updateQuantity($this->cartItem->id, $this->item->qty);
-            return false;
+            return $this->item->qty >= ($alreadyAddedQty + $requestedStockQty);
         }
 
-        return $this->item->qty >= $requestedQty;
+        if (request()->routeIs('cart.items.update')) {
+            $alreadyAddedQtyWithoutCurrentItem = $this->getAlreadyAddedProductQty(
+                $this->cartItem ? $this->cartItem->id : null
+            );
+
+            return $this->item->qty >= ($alreadyAddedQtyWithoutCurrentItem + $requestedStockQty);
+        }
+
+        return $this->item->qty >= $requestedStockQty;
+    }
+
+    private function getRequestedStockQty(): int
+    {
+        $requestedQty = max(1, (int) request('qty', 1));
+        $packagingQty = 1;
+
+        if (request()->routeIs('cart.items.store')) {
+            $packagingId = request('packaging_id');
+
+            if ($packagingId && $this->product) {
+                $packaging = $this->product->allPackagings()
+                    ->where('product_packagings.is_active', true)
+                    ->find($packagingId);
+
+                if ($packaging) {
+                    $packagingQty = max(1, (int) $packaging->qty);
+                }
+            }
+        }
+
+        if (request()->routeIs('cart.items.update') && $this->cartItem) {
+            $packaging = $this->cartItem->packaging ?? null;
+
+            if (!empty($packaging->id)) {
+                $packagingQty = max(1, (int) ($packaging->qty ?? 1));
+            }
+        }
+
+        return $requestedQty * $packagingQty;
+    }
+
+    private function getAlreadyAddedProductQty(?string $exceptCartItemId = null): int
+    {
+        if (!$this->item) {
+            return 0;
+        }
+
+        $productId = (int) $this->item->id;
+
+        return Cart::items()
+            ->filter(function (CartItem $cartItem) use ($productId, $exceptCartItemId) {
+                if ($exceptCartItemId && $cartItem->id === $exceptCartItemId) {
+                    return false;
+                }
+
+                return (int) ($cartItem->product->id ?? 0) === $productId;
+            })
+            ->sum(function (CartItem $cartItem) {
+                return $this->getCartItemStockQty($cartItem);
+            });
+    }
+
+    private function getCartItemStockQty(CartItem $cartItem): int
+    {
+        $qty = max(1, (int) $cartItem->qty);
+        $packaging = $cartItem->packaging ?? null;
+
+        if (!empty($packaging->id)) {
+            return $qty * max(1, (int) ($packaging->qty ?? 1));
+        }
+
+        return $qty;
     }
 }

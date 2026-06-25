@@ -265,8 +265,7 @@ class Product extends Model implements Sitemapable
             'price' => 'Цена',
             'special_price' => 'Акционная цена',
             'qty' => 'Количество (множитель)',
-            'gift_id' => 'ID базовой упаковки (если это подарок)',
-            'is_gift' => 'Это подарок? (1 / 0)',
+            'is_active' => 'Активна? (1 / 0)',
             'formatted_price' => 'Форматированная цена',
         ];
     }
@@ -503,51 +502,56 @@ class Product extends Model implements Sitemapable
     private static function updatePackings(array $attributes, Product $product)
     {
         $packagings = $attributes['packagings'] ?? [];
-        $giftPackagings = $attributes['gift_packagings'] ?? [];
 
-        $idsInForm = collect($packagings)->pluck('id')
-            ->merge(collect($giftPackagings)->pluck('id'))
+        $idsInForm = collect($packagings)
+            ->pluck('id')
             ->filter()
             ->toArray();
 
-        if (empty($packagings) && empty($giftPackagings)) {
+        if (empty($packagings)) {
+            $packagingIds = $product->allPackagings()->pluck('id')->toArray();
+
+            ProductGift::where('parent_product_id', $product->id)
+                ->whereIn('parent_packaging_id', $packagingIds)
+                ->update(['parent_packaging_id' => null]);
+
             $product->allPackagings()->delete();
+
             return true;
         }
 
-        $product->allPackagings()->whereNotIn('id', $idsInForm)->delete();
+        $packagingIdsToDelete = $product->allPackagings()
+            ->whereNotIn('id', $idsInForm)
+            ->pluck('id')
+            ->toArray();
 
-        $mapGifts = [];
+        if (!empty($packagingIdsToDelete)) {
+            ProductGift::where('parent_product_id', $product->id)
+                ->whereIn('parent_packaging_id', $packagingIdsToDelete)
+                ->update(['parent_packaging_id' => null]);
 
-        if (!empty($giftPackagings)) {
-            foreach ($giftPackagings as $index => $data) {
-                $gift = $product->allPackagings()->updateOrCreate(
-                    ['id' => array_get($data, 'id')],
-                    array_merge($data, [
-                        'is_gift' => true,
-                        'special_price' => 0,
-                        'special_price_type' => 'fixed'
-                    ])
-                );
-
-                $mapGifts["idx_{$index}"] = $gift->id;
-                $mapGifts[$gift->id] = $gift->id;
-            }
+            $product->allPackagings()
+                ->whereIn('id', $packagingIdsToDelete)
+                ->delete();
         }
 
-        if (!empty($packagings)) {
-            foreach ($packagings as $data) {
-                $giftIndex = array_get($data, 'gift_id');
-                $realGiftId = $mapGifts[$giftIndex] ?? (is_numeric($giftIndex) ? $giftIndex : null);
+        foreach ($packagings as $data) {
+            $saveData = array_except($data, [
+                'gift_id',
+                'is_gift',
+                'gifts',
+            ]);
 
-                $product->allPackagings()->updateOrCreate(
-                    ['id' => array_get($data, 'id')],
-                    array_merge($data, [
-                        'is_gift' => false,
-                        'gift_id' => $realGiftId
-                    ])
-                );
-            }
+            $product->allPackagings()->updateOrCreate(
+                ['id' => array_get($data, 'id')],
+                array_merge($saveData, [
+                    'qty' => array_get($data, 'qty', 1),
+                    'price' => array_get($data, 'price', 0),
+                    'special_price' => array_get($data, 'special_price', 0),
+                    'special_price_type' => array_get($data, 'special_price_type', 'fixed'),
+                    'is_active' => array_get($data, 'is_active', 0) ? 1 : 0,
+                ])
+            );
         }
 
         return true;
@@ -556,32 +560,72 @@ class Product extends Model implements Sitemapable
 
     private static function updateProductGifts(array $attributes, Product $product)
     {
-        $giftsData = array_get($attributes, 'gifts', []);
-        $giftProductIds = collect($giftsData)->pluck('gift_product_id')->filter()->toArray();
+        $gifts = array_get($attributes, 'product_gifts', []);
+        $idsInForm = collect($gifts)->pluck('id')->filter()->toArray();
 
-        $product->productGifts()->whereNotIn('gift_product_id', $giftProductIds)->delete();
+        if (empty($gifts)) {
+            ProductGift::where('parent_product_id', $product->id)->delete();
+            return;
+        }
 
-        foreach ($giftsData as $data) {
+        ProductGift::where('parent_product_id', $product->id)
+            ->whereNotIn('id', $idsInForm)
+            ->delete();
+
+        foreach ($gifts as $data) {
             $giftProductId = array_get($data, 'gift_product_id');
 
-            if (!$giftProductId) continue;
-            $existing = $product->productGifts()
-                ->withTrashed()
-                ->where('gift_product_id', $giftProductId)
-                ->first();
+            if (!$giftProductId) {
+                continue;
+            }
 
-            $saveData = [
+            $parentPackagingId = array_get($data, 'parent_packaging_id') ?: null;
+            $giftPackagingId = array_get($data, 'gift_packaging_id') ?: null;
+
+            if ($parentPackagingId && !$product->allPackagings()->where('id', $parentPackagingId)->exists()) {
+                $parentPackagingId = null;
+            }
+
+            if ($giftPackagingId) {
+                $giftPackagingExists = ProductPackaging::where('id', $giftPackagingId)
+                    ->where('product_id', $giftProductId)
+                    ->exists();
+
+                if (!$giftPackagingExists) {
+                    $giftPackagingId = null;
+                }
+            }
+
+            $giftData = [
+                'parent_product_id' => $product->id,
+                'parent_packaging_id' => $parentPackagingId,
                 'gift_product_id' => $giftProductId,
-                'price' => array_get($data, 'price', 0),
-                'min_qty' => array_get($data, 'min_qty', 1),
+                'gift_packaging_id' => $giftPackagingId,
+                'price' => array_get($data, 'price', 0) ?: 0,
+                'min_qty' => max(1, (int) array_get($data, 'min_qty', 1)),
+                'gift_qty' => max(1, (int) array_get($data, 'gift_qty', 1)),
+                'is_repeatable' => array_get($data, 'is_repeatable', 0) ? 1 : 0,
+                'is_active' => array_get($data, 'is_active', 0) ? 1 : 0,
             ];
 
-            if ($existing) {
-                $existing->restore();
-                $existing->update($saveData);
-            } else {
-                $product->productGifts()->create($saveData);
+            $giftId = array_get($data, 'id');
+            $gift = null;
+
+            if ($giftId) {
+                $gift = ProductGift::withTrashed()
+                    ->where('parent_product_id', $product->id)
+                    ->where('id', $giftId)
+                    ->first();
             }
+
+            if ($gift) {
+                $gift->restore();
+                $gift->update($giftData);
+            } else {
+                $gift = ProductGift::create($giftData);
+            }
+
+            self::syncGiftOptions($gift, array_get($data, 'options', []));
         }
     }
 
@@ -693,4 +737,92 @@ class Product extends Model implements Sitemapable
         }
     }
 
+    private static function syncGiftRules(Product $product, ?int $parentPackagingId, array $gifts): void
+    {
+        $idsInForm = collect($gifts)
+            ->pluck('id')
+            ->filter()
+            ->toArray();
+
+        $deleteQuery = ProductGift::where('parent_product_id', $product->id);
+
+        if ($parentPackagingId) {
+            $deleteQuery->where('parent_packaging_id', $parentPackagingId);
+        } else {
+            $deleteQuery->whereNull('parent_packaging_id');
+        }
+
+        if (empty($gifts)) {
+            $deleteQuery->delete();
+            return;
+        }
+
+        $deleteQuery->whereNotIn('id', $idsInForm)->delete();
+
+        foreach ($gifts as $data) {
+            $giftProductId = array_get($data, 'gift_product_id');
+
+            if (!$giftProductId) {
+                continue;
+            }
+
+            $giftData = [
+                'parent_product_id' => $product->id,
+                'parent_packaging_id' => $parentPackagingId,
+                'gift_product_id' => $giftProductId,
+                'gift_packaging_id' => array_get($data, 'gift_packaging_id') ?: null,
+                'price' => array_get($data, 'price', 0) ?: 0,
+                'min_qty' => max(1, (int) array_get($data, 'min_qty', 1)),
+                'is_active' => array_get($data, 'is_active', 0) ? 1 : 0,
+            ];
+
+            $giftId = array_get($data, 'id');
+            $gift = null;
+
+            if ($giftId) {
+                $gift = ProductGift::withTrashed()
+                    ->where('parent_product_id', $product->id)
+                    ->where('id', $giftId)
+                    ->first();
+            }
+
+            if ($gift) {
+                $gift->restore();
+                $gift->update($giftData);
+            } else {
+                $gift = ProductGift::create($giftData);
+            }
+
+            self::syncGiftOptions($gift, array_get($data, 'options', []));
+        }
+    }
+
+    private static function syncGiftOptions(ProductGift $gift, array $options): void
+    {
+        $options = collect($options)
+            ->filter(fn ($value) => !is_null($value) && $value !== '')
+            ->toArray();
+
+        $optionIds = array_keys($options);
+
+        if (empty($options)) {
+            $gift->options()->delete();
+            return;
+        }
+
+        $gift->options()
+            ->whereNotIn('product_option_id', $optionIds)
+            ->delete();
+
+        foreach ($options as $productOptionId => $productOptionValueId) {
+            $gift->options()->updateOrCreate(
+                [
+                    'product_option_id' => $productOptionId,
+                ],
+                [
+                    'product_option_value_id' => $productOptionValueId,
+                ]
+            );
+        }
+    }
 }

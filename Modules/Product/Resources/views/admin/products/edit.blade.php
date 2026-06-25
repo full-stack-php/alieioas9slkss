@@ -9,7 +9,7 @@
 @endphp
 
 @component('admin::components.page.header')
-    @slot('title', trans('admin::resource.edit', ['resource' => trans('product::products.product')]))
+    @slot('title', trans('admin::resource.edit', ['resource' => trans('product::products.product') . ' ' . $product->name]))
     @slot('subtitle', $product->name)
 
     <li class="breadcrumb-item">

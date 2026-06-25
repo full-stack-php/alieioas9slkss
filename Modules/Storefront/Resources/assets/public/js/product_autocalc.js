@@ -62,13 +62,14 @@ export default class {
     recalculate() {
         const quantity = Number($(this.selectors.quantityInput).val()) || 1;
 
-        let total = this.basePrice;
-        let totalSpecial = this.baseSpecialPrice;
+        let unitPrice = this.basePrice;
+        let unitSpecialPrice = this.baseSpecialPrice;
 
-        const hasDiscount = (this.baseSpecialPrice > 0);
+        const hasDiscount = this.baseSpecialPrice > 0;
 
         $(this.selectors.options).each((_, el) => {
             const $el = $(el);
+
             if ($el.is(':disabled') || $el.closest('select').is(':disabled')) {
                 return;
             }
@@ -81,34 +82,135 @@ export default class {
                 : price;
 
             if (prefix === 'fixed' && price > 0) {
-                total = price;
-                if (hasDiscount) totalSpecial = specPrice;
-            }
-            else if (prefix === 'percent' && price > 0) {
-                total += this.basePrice * (price / 100);
-                if (hasDiscount) totalSpecial += this.baseSpecialPrice * (specPrice / 100);
-            }
-            else if (prefix === '+') {
-                total += price;
-                if (hasDiscount) totalSpecial += specPrice;
-            }
-            else if (prefix === '-') {
-                total -= price;
-                if (hasDiscount) totalSpecial -= specPrice;
+                unitPrice = price;
+
+                if (hasDiscount) {
+                    unitSpecialPrice = specPrice;
+                }
+            } else if (prefix === 'percent' && price > 0) {
+                unitPrice += this.basePrice * (price / 100);
+
+                if (hasDiscount) {
+                    unitSpecialPrice += this.baseSpecialPrice * (specPrice / 100);
+                }
+            } else if (prefix === '+') {
+                unitPrice += price;
+
+                if (hasDiscount) {
+                    unitSpecialPrice += specPrice;
+                }
+            } else if (prefix === '-') {
+                unitPrice -= price;
+
+                if (hasDiscount) {
+                    unitSpecialPrice -= specPrice;
+                }
             }
         });
 
-        total *= quantity;
+        let total = unitPrice * quantity;
+        let totalSpecial = hasDiscount ? unitSpecialPrice * quantity : 0;
+
+        const giftTotal = this.calculateGiftTotal(quantity);
+
+        total += giftTotal;
 
         if (hasDiscount) {
-            totalSpecial *= quantity;
-            if (totalSpecial < 0) totalSpecial = 0;
+            totalSpecial += giftTotal;
+
+            if (totalSpecial < 0) {
+                totalSpecial = 0;
+            }
         }
-        if (total < 0) total = 0;
+
+        if (total < 0) {
+            total = 0;
+        }
 
         this.animatePrices(total, totalSpecial);
     }
 
+    calculateGiftTotal(parentQty) {
+        let total = 0;
+
+        total += this.calculateProductGiftTotal(parentQty);
+        total += this.calculatePackagingGiftTotal(parentQty);
+
+        return total;
+    }
+
+    calculateProductGiftTotal(parentQty) {
+        let total = 0;
+
+        $('.js-product-gift-rule:checked').each((_, el) => {
+            const $el = $(el);
+
+            if ($el.is(':disabled')) {
+                return;
+            }
+
+            total += this.calculateGiftRuleTotal($el, parentQty);
+        });
+
+        return total;
+    }
+
+    calculatePackagingGiftTotal(parentQty) {
+        let total = 0;
+        const selectedPackagingId = this.getSelectedPackagingId();
+
+        if (!selectedPackagingId) {
+            return total;
+        }
+
+        $('.js-packaging-gift-rule').each((_, el) => {
+            const $el = $(el);
+            const parentPackagingId = String($el.data('parent-packaging-id') || '');
+
+            if (parentPackagingId !== selectedPackagingId) {
+                return;
+            }
+
+            total += this.calculateGiftRuleTotal($el, parentQty);
+        });
+
+        return total;
+    }
+
+    calculateGiftRuleTotal($rule, parentQty) {
+        const giftPrice = parseFloat($rule.data('gift-price') || 0);
+        const giftQty = this.calculateGiftRuleQty($rule, parentQty);
+
+        if (giftPrice <= 0 || giftQty <= 0) {
+            return 0;
+        }
+
+        return giftPrice * giftQty;
+    }
+
+    calculateGiftRuleQty($rule, parentQty) {
+        const minQty = Math.max(1, parseInt($rule.data('min-qty') || 1, 10));
+        const giftQty = Math.max(1, parseInt($rule.data('gift-qty') || 1, 10));
+
+        const isRepeatable = String($rule.data('is-repeatable')) === '1'
+            || $rule.data('is-repeatable') === true;
+
+        if (parentQty < minQty) {
+            return 0;
+        }
+
+        if (isRepeatable) {
+            return Math.floor(parentQty / minQty) * giftQty;
+        }
+
+        return giftQty;
+    }
+
+    getSelectedPackagingId() {
+        const $selectedPackaging = $('input[name="packaging_id"]:checked');
+
+        return $selectedPackaging.length ? String($selectedPackaging.val()) : '';
+    }
     animatePrices(newPrice, newSpecial) {
         this.finalPrice = newPrice;
         this.finalSpecialPrice = newSpecial;

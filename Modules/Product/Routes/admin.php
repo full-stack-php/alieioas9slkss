@@ -14,6 +14,12 @@ Route::get('products-search', [
     'middleware' => 'can:admin.products.index',
 ]);
 
+Route::get('products/{product}/gift-config', [
+    'as' => 'admin.products.gift_config',
+    'uses' => 'ProductController@giftConfig',
+    'middleware' => 'can:admin.products.index',
+]);
+
 Route::get(
     'products/create',
     [

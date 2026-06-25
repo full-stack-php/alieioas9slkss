@@ -193,7 +193,7 @@ class Order extends Model
         $savedOrderProductsMap = [];
 
         foreach ($cartItems as $cartItem) {
-            $attributes = $cartItem->item->attributes ?? $cartItem->product->attributes ?? [];
+            $attributes = $cartItem->attributes ?? [];
             $parentId = $attributes['parent_id'] ?? null;
 
             if ($parentId) {
@@ -220,7 +220,7 @@ class Order extends Model
         }
 
         foreach ($cartItems as $cartItem) {
-            $attributes = $cartItem->item->attributes ?? $cartItem->product->attributes ?? [];
+            $attributes = $cartItem->attributes ?? [];
             $parentIdStr = $attributes['parent_id'] ?? null;
 
             if (!$parentIdStr) {
@@ -229,7 +229,7 @@ class Order extends Model
 
             $packagingId = !empty($cartItem->packaging->id) ? $cartItem->packaging->id : null;
             $bundleId = $attributes['bundle_id'] ?? null;
-            $isGift = $attributes['is_gift'] ?? false;
+            $isGift = ($attributes['is_gift'] ?? false) || ($attributes['is_gift_packaging'] ?? false);
 
             $realParentId = $savedOrderProductsMap[$parentIdStr] ?? null;
 

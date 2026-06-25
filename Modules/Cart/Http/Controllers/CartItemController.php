@@ -49,7 +49,8 @@ class CartItemController extends Controller
             $request->qty,
             $request->options ?? [],
             $request->ch_gifts ?? [],
-            $request->packaging_id
+            $request->packaging_id,
+            $request->gift_packaging_ids ?? []
         );
 
         return Cart::instance();

@@ -7,6 +7,7 @@ use JsonSerializable;
 use Modules\Support\Money;
 use Modules\Coupon\Entities\Coupon;
 use Modules\Product\Entities\Product;
+use Modules\Product\Entities\ProductGift;
 use Modules\Shipping\Facades\ShippingMethod;
 use Darryldecode\Cart\Cart as DarryldecodeCart;
 use Modules\Product\Services\ChosenProductOptions;
@@ -26,27 +27,22 @@ class Cart extends DarryldecodeCart implements JsonSerializable
     public function store($productId, $qty, $options = [], $giftIds = [], $packagingId = null): void
     {
         $options = array_filter($options);
+
         $product = $this->getCartProduct($productId);
 
-
         $packaging = null;
+
         if ($packagingId) {
-            $packaging = $product->allPackagings()->find($packagingId);
+            $packaging = $product->allPackagings()
+                ->where('product_packagings.is_active', true)
+                ->find($packagingId);
         }
 
         $chosenOptions = new ChosenProductOptions($product, $options);
         $lightOptions = $this->getLightOptions($chosenOptions->getEntities());
 
         if ($packaging) {
-            $hasSpecial = !is_null($packaging->special_price) && (float)$packaging->special_price > 0;
-            $unitPrice = $hasSpecial ? (float)$packaging->special_price : (float)$packaging->price;
-            if ($hasSpecial && $packaging->special_price_type === 'percent') {
-                $unitPrice = (float)$packaging->price * (1 - ((float)$packaging->special_price / 100));
-            }
-
-
-            $productBasePrice = $unitPrice * (int)$packaging->qty;
-            $finalPrice = $productBasePrice;
+            $finalPrice = $this->getPackagingPrice($packaging);
         } else {
             $productBasePrice = $product->selling_price->amount();
             $finalPrice = $this->calculateAdvancedPrice($productBasePrice, $lightOptions, !!$packaging);
@@ -56,59 +52,285 @@ class Cart extends DarryldecodeCart implements JsonSerializable
         $parentCartId = md5("product_id.{$productId}:options." . serialize($options) . ":pkg." . ($packagingId ?? 'none'));
 
 
+        $selectedGiftRuleIds = collect((array) $giftIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->toArray();
+
         $this->add([
             'id' => $parentCartId,
             'name' => $product->name,
             'price' => $finalPrice,
-            'quantity' => (int)$qty,
+            'quantity' => (int) $qty,
             'attributes' => [
                 'product' => $this->getLightProduct($product),
                 'options' => $lightOptions,
                 'packaging' => $packaging ? $this->getLightPackaging($packaging) : null,
+                'selected_gift_rule_ids' => $selectedGiftRuleIds,
+                'removed_gift_rule_ids' => [],
                 'created_at' => time(),
             ],
         ]);
 
-        if (!empty($giftIds)) {
-            $this->storeGifts($product, $giftIds, $parentCartId);
-        }
+        $parentCartItem = $this->get($parentCartId);
+        $parentQty = $parentCartItem ? (int) $parentCartItem->quantity : (int) $qty;
+
+        $this->syncGiftRules(
+            $product,
+            $selectedGiftRuleIds,
+            $parentCartId,
+            $parentQty,
+            $packaging ? (int) $packaging->id : null
+        );
     }
 
-    private function storeGifts($mainProduct, $giftIds, $parentCartId)
+    private function getPackagingPrice($packaging): float
     {
-        $this->getContent()->each(function ($item) use ($parentCartId) {
-            if (($item->attributes['parent_id'] ?? null) === $parentCartId) {
-                parent::remove($item->id);
-            }
-        });
-        $targetGiftId = collect($giftIds)->first();
+        $unitPrice = (float) $packaging->price;
 
-        if (!$targetGiftId) {
+        if (!is_null($packaging->special_price) && (float) $packaging->special_price > 0) {
+            if ($packaging->special_price_type === 'percent') {
+                $unitPrice = (float) $packaging->price * (1 - ((float) $packaging->special_price / 100));
+            } else {
+                $unitPrice = (float) $packaging->special_price;
+            }
+        }
+
+        return $unitPrice * (int) $packaging->qty;
+    }
+
+    private function syncGiftRules(Product $mainProduct, array $selectedGiftRuleIds, string $parentCartId, int $parentQty, ?int $packagingId = null): void
+    {
+        $removedGiftRuleIds = $this->getRemovedGiftRuleIds($parentCartId);
+
+        $this->removeGiftChildren($parentCartId);
+
+        $giftRules = collect();
+
+        $selectedGiftRuleIds = collect($selectedGiftRuleIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($selectedGiftRuleIds->isNotEmpty()) {
+            $productGiftRules = $mainProduct->productGifts()
+                ->with($this->giftRuleRelations())
+                ->where('product_gifts.is_active', true)
+                ->whereNull('parent_packaging_id')
+                ->whereIn('id', $selectedGiftRuleIds)
+                ->when(!empty($removedGiftRuleIds), function ($query) use ($removedGiftRuleIds) {
+                    $query->whereNotIn('id', $removedGiftRuleIds);
+                })
+                ->get();
+
+            $giftRules = $giftRules->merge($productGiftRules);
+        }
+
+        if ($packagingId) {
+            $packagingGiftRules = $mainProduct->productGifts()
+                ->with($this->giftRuleRelations())
+                ->where('product_gifts.is_active', true)
+                ->where('parent_packaging_id', $packagingId)
+                ->when(!empty($removedGiftRuleIds), function ($query) use ($removedGiftRuleIds) {
+                    $query->whereNotIn('id', $removedGiftRuleIds);
+                })
+                ->get();
+
+            $giftRules = $giftRules->merge($packagingGiftRules);
+        }
+
+        $giftRules
+            ->unique('id')
+            ->each(function (ProductGift $giftRule) use ($parentCartId, $parentQty) {
+                $giftQty = $this->calculateGiftQuantity($giftRule, $parentQty);
+
+                if ($giftQty <= 0 || !$giftRule->giftProduct) {
+                    return;
+                }
+
+                $this->addGiftRuleToCart($giftRule, $parentCartId, $giftQty);
+            });
+    }
+
+    private function getRemovedGiftRuleIds(string $parentCartId): array
+    {
+        $parentItem = $this->get($parentCartId);
+
+        if (!$parentItem) {
+            return [];
+        }
+
+        $attributes = $this->getCartItemAttributesArray($parentItem);
+
+        return collect($attributes['removed_gift_rule_ids'] ?? [])
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->toArray();
+    }
+
+    private function rememberRemovedGiftRule($cartItem): void
+    {
+        if (!$cartItem) {
             return;
         }
 
-        $giftData = $mainProduct->productGifts()
-            ->where('gift_product_id', $targetGiftId)
-            ->first();
-
-        if ($giftData) {
-            $giftProduct = $this->getCartProduct($giftData->gift_product_id);
-
-            $this->add([
-                'id' => md5("gift_id.{$giftData->gift_product_id}:parent.{$parentCartId}"),
-                'name' => $giftProduct->name . ' (Акція)',
-                'price' => (float)$giftData->price,
-                'quantity' => 1,
-                'attributes' => [
-                    'product' => $this->getLightProduct($giftProduct, true),
-                    'options' => collect(),
-                    'is_gift' => true,
-                    'parent_id' => $parentCartId,
-                    'min_qty' => (int)$giftData->min_qty,
-                    'created_at' => time() + 1,
-                ],
-            ]);
+        if (!(bool) ($cartItem->attributes['is_gift'] ?? false)) {
+            return;
         }
+
+        $parentCartId = $cartItem->attributes['parent_id'] ?? null;
+        $giftRuleId = $cartItem->attributes['gift_rule_id'] ?? null;
+
+        if (!$parentCartId || !$giftRuleId) {
+            return;
+        }
+
+        $parentItem = $this->get($parentCartId);
+
+        if (!$parentItem) {
+            return;
+        }
+
+        $attributes = $this->getCartItemAttributesArray($parentItem);
+
+        $removedGiftRuleIds = collect($attributes['removed_gift_rule_ids'] ?? [])
+            ->push((int) $giftRuleId)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $attributes['removed_gift_rule_ids'] = $removedGiftRuleIds;
+
+        $this->update($parentCartId, [
+            'attributes' => $attributes,
+        ]);
+    }
+
+    private function getCartItemAttributesArray($cartItem): array
+    {
+        $attributes = $cartItem->attributes ?? [];
+
+        if ($attributes instanceof SupportCollection) {
+            return $attributes->all();
+        }
+
+        if (is_object($attributes) && method_exists($attributes, 'all')) {
+            return $attributes->all();
+        }
+
+        if (is_array($attributes)) {
+            return $attributes;
+        }
+
+        return (array) $attributes;
+    }
+
+    private function giftRuleRelations(): array
+    {
+        return [
+            'giftProduct.files',
+            'giftProduct.translations',
+            'giftPackaging.translations',
+            'options.productOption',
+            'options.productOptionValue.optionValue',
+        ];
+    }
+
+    private function removeGiftChildren(string $parentCartId): void
+    {
+        $this->getContent()->each(function ($item) use ($parentCartId) {
+            if (
+                ($item->attributes['parent_id'] ?? null) === $parentCartId
+                && (bool) ($item->attributes['is_gift'] ?? false)
+            ) {
+                parent::remove($item->id);
+            }
+        });
+    }
+
+    private function calculateGiftQuantity(ProductGift $giftRule, int $parentQty): int
+    {
+        $minQty = max(1, (int) $giftRule->min_qty);
+        $giftQty = max(1, (int) ($giftRule->gift_qty ?: 1));
+
+        if ($parentQty < $minQty) {
+            return 0;
+        }
+
+        if ($giftRule->is_repeatable) {
+            return intdiv($parentQty, $minQty) * $giftQty;
+        }
+
+        return $giftQty;
+    }
+
+    private function addGiftRuleToCart(ProductGift $giftRule, string $parentCartId, int $giftQty): void
+    {
+        $giftProduct = $this->getCartProduct($giftRule->gift_product_id);
+        $giftPackaging = $giftRule->giftPackaging;
+
+        $this->add([
+            'id' => md5("gift_rule_id.{$giftRule->id}:parent.{$parentCartId}"),
+            'name' => $giftProduct->name . ' (Акція)',
+            'price' => (float) $giftRule->price,
+            'quantity' => $giftQty,
+            'attributes' => [
+                'product' => $this->getLightProduct($giftProduct, true),
+                'options' => $this->getLightGiftOptions($giftRule),
+                'packaging' => $giftPackaging ? $this->getLightPackaging($giftPackaging) : null,
+
+                'is_gift' => true,
+                'parent_id' => $parentCartId,
+                'gift_rule_id' => $giftRule->id,
+                'parent_packaging_id' => $giftRule->parent_packaging_id,
+
+                'min_qty' => (int) $giftRule->min_qty,
+                'gift_qty' => (int) ($giftRule->gift_qty ?: 1),
+                'is_repeatable' => (bool) $giftRule->is_repeatable,
+
+                'created_at' => time() + 1,
+            ],
+        ]);
+    }
+
+    private function getLightGiftOptions(ProductGift $giftRule): SupportCollection
+    {
+        return collect($giftRule->options ?? [])
+            ->values()
+            ->map(function ($giftOption, $index) {
+                $productOption = $giftOption->productOption;
+                $productOptionValue = $giftOption->productOptionValue;
+
+                if (!$productOption || !$productOptionValue) {
+                    return null;
+                }
+
+                return (object) [
+                    'id' => $productOption->option_id ?? $productOption->id,
+                    'name' => $productOption->name,
+                    'position' => $productOption->position ?? $index,
+                    'values' => collect([
+                        (object) [
+                            'id' => $productOptionValue->option_value_id ?? $productOptionValue->id,
+                            'label' => $productOptionValue->label,
+                            'price' => 0,
+                            'price_type' => null,
+                            'special_price' => 0,
+                            'special_price_type' => null,
+                            'position' => $productOptionValue->position ?? 0,
+                        ],
+                    ]),
+                ];
+            })
+            ->filter()
+            ->values();
     }
 
     private function getCartProduct($id)
@@ -161,9 +383,8 @@ class Cart extends DarryldecodeCart implements JsonSerializable
         return (object)[
             'id' => $packaging->id,
             'name' => $packaging->name,
-            'qty' => (int)$packaging->qty,
+            'qty' => (int) $packaging->qty,
             'price_per_unit' => $packaging->price,
-            'is_gift' => (bool)$packaging->is_gift,
         ];
     }
 
@@ -243,6 +464,8 @@ class Cart extends DarryldecodeCart implements JsonSerializable
 
     public function updateQuantity($id, $qty): void
     {
+        $cartItem = $this->get($id);
+
         $this->update($id, [
             'quantity' => [
                 'relative' => false,
@@ -250,7 +473,38 @@ class Cart extends DarryldecodeCart implements JsonSerializable
             ],
         ]);
 
-        $this->validateGiftsConditions($id, $qty);
+        if (!$cartItem) {
+            return;
+        }
+
+        if ((bool) ($cartItem->attributes['is_gift'] ?? false)) {
+            return;
+        }
+
+        if (!empty($cartItem->attributes['bundle_id'] ?? null)) {
+            return;
+        }
+
+        $productId = $cartItem->attributes['product']->id ?? null;
+
+        if (!$productId) {
+            return;
+        }
+
+        $product = $this->getCartProduct($productId);
+
+        $selectedGiftRuleIds = (array) ($cartItem->attributes['selected_gift_rule_ids'] ?? []);
+
+        $packaging = $cartItem->attributes['packaging'] ?? null;
+        $packagingId = !empty($packaging->id) ? (int) $packaging->id : null;
+
+        $this->syncGiftRules(
+            $product,
+            $selectedGiftRuleIds,
+            $id,
+            (int) $qty,
+            $packagingId
+        );
     }
 
     public function subTotal()
@@ -346,21 +600,6 @@ class Cart extends DarryldecodeCart implements JsonSerializable
             });
     }
 
-    private function validateGiftsConditions($parentId, $parentQty): void
-    {
-        $this->getContent()->each(function ($cartItem) use ($parentId, $parentQty) {
-            if (($cartItem->attributes['parent_id'] ?? null) === $parentId) {
-                $minQty = (int)($cartItem->attributes['min_qty'] ?? 1);
-                if ($parentQty < $minQty) {
-                    parent::remove($cartItem->id);
-                }
-            }
-        });
-    }
-
-    /**
-     * Добавление набора в корзину
-     */
     public function storeBundle($bundleProductId, $mainProductId): void
     {
         $mainProduct = Product::findOrFail($mainProductId);
@@ -414,6 +653,13 @@ class Cart extends DarryldecodeCart implements JsonSerializable
     public function remove($id): void
     {
         $item = $this->get($id);
+
+        if (!$item) {
+            return;
+        }
+
+        $this->rememberRemovedGiftRule($item);
+
         $bundleId = $item->attributes['bundle_id'] ?? null;
 
         parent::remove($id);
@@ -425,6 +671,7 @@ class Cart extends DarryldecodeCart implements JsonSerializable
                 }
             });
         }
+
         $this->getContent()->each(function ($cartItem) use ($id) {
             if (($cartItem->attributes['parent_id'] ?? null) === $id) {
                 parent::remove($cartItem->id);
@@ -441,7 +688,6 @@ class Cart extends DarryldecodeCart implements JsonSerializable
         });
 
         return $items->sum(function ($item) {
-            // Если товар добавлен в упаковке, умножаем количество упаковок на количество штук в упаковке
             if (!empty($item->packaging->id)) {
                 return (int)$item->qty * (int)($item->packaging->qty ?? 1);
             }

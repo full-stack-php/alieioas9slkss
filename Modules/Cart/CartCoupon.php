@@ -128,15 +128,22 @@ class CartCoupon implements JsonSerializable
 
     private function couponApplicableProducts()
     {
-        return $this->cart->items()->filter(function ($cartItem) {
-            return $this->inApplicableProducts($cartItem);
-        })->reject(function ($cartItem) {
-            return $this->inExcludedProducts($cartItem);
-        })->filter(function ($cartItem) {
-            return $this->inApplicableCategories($cartItem);
-        })->reject(function ($cartItem) {
-            return $this->inExcludedCategories($cartItem);
-        });
+        return $this->cart->items()
+            ->reject(function ($cartItem) {
+                return $cartItem->excludeFromCoupon ?? false;
+            })
+            ->filter(function ($cartItem) {
+                return $this->inApplicableProducts($cartItem);
+            })
+            ->reject(function ($cartItem) {
+                return $this->inExcludedProducts($cartItem);
+            })
+            ->filter(function ($cartItem) {
+                return $this->inApplicableCategories($cartItem);
+            })
+            ->reject(function ($cartItem) {
+                return $this->inExcludedCategories($cartItem);
+            });
     }
 
 

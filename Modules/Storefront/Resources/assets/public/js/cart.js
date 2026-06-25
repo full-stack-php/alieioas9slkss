@@ -9,7 +9,9 @@ export default class Cart {
             qtyInput: 'input[name="quantity"]',
             optionsContainer: '.options',
             packagingContainer: '.product-packagings',
+            packagingInput: 'input[name="packaging_id"]:checked',
             giftCheckboxes: '.gift-checkbox:checked:not(:disabled)',
+            giftPackagingCheckboxes: '.gift-packaging-checkbox:checked:not(:disabled)',
             cartCount: '.cart-total',
             cartTotal: '.cart-total-value',
             cartWrapper: '.cart-content',
@@ -42,11 +44,15 @@ export default class Cart {
 
         $(document).on('click', '.cart-close, .cart-overlay', () => this.close());
 
-        $(document).on('change', '.gift-checkbox', function() {
-            if($(this).is(':checked')) {
+        // Обычный подарок может быть только один
+        $(document).on('change', '.gift-checkbox', function () {
+            if ($(this).is(':checked')) {
                 $('.gift-checkbox').not(this).prop('checked', false);
             }
         });
+
+        // Подарочные упаковки специально НЕ ограничиваем одной.
+        // Их может быть несколько.
     }
 
     initStickyButton() {
@@ -64,7 +70,7 @@ export default class Cart {
             $body.addClass('cart-is-sticky');
         }
 
-        $hcs.off('scroll').on('scroll', function() {
+        $hcs.off('scroll').on('scroll', function () {
             if ($(this).scrollTop() >= checkScroll(this)) {
                 $body.removeClass('cart-is-sticky');
             } else {
@@ -74,7 +80,6 @@ export default class Cart {
     }
 
     open(elem, data = null) {
-        const $trigger = $(elem);
         const $wrapper = $(this.selectors.cartWrapper);
         const $container = $('.shopping-cart');
 
@@ -126,7 +131,7 @@ export default class Cart {
         $.ajax({
             method: 'PUT',
             url: `${this.baseUrl}/cart/items/${id}`,
-            data: { qty: qty },
+            data: { qty },
             success: (response) => {
                 this.refreshUI(response, 'updateQuantity');
             }
@@ -137,22 +142,12 @@ export default class Cart {
         const $btn = $(this.selectors.addToCartBtn);
         const productId = $(this.selectors.productIdInput).val();
         const qty = $(this.selectors.qtyInput).val() || 1;
-        const isMirrored = $('#is_mirrored').val() === "1";
-        const packagingId = $('input[name="packaging_id"]:checked').val();
+        const isMirrored = $('#is_mirrored').val() === '1';
 
-        const rawOptions = {};
-        $(this.selectors.optionsContainer).find('select, input[type="radio"]:checked, input[type="hidden"]').each(function() {
-            const name = $(this).attr('name');
-            const val = $(this).val();
-            if (val && name && (name.startsWith('options[') || name.startsWith('m_options['))) {
-                rawOptions[name] = val;
-            }
-        });
-
-        const giftIds = [];
-        $(this.selectors.giftCheckboxes).each(function() {
-            giftIds.push($(this).val());
-        });
+        const packagingId = this.getSelectedPackagingId();
+        const rawOptions = this.getRawOptions();
+        const giftIds = this.getSelectedGiftIds();
+        const giftPackagingIds = this.getSelectedGiftPackagingIds();
 
         $btn.prop('disabled', true).addClass('loading');
 
@@ -160,52 +155,104 @@ export default class Cart {
             const firstEye = this.extractOptions(rawOptions, false);
             const secondEye = this.extractOptions(rawOptions, true);
 
-            this.sendAddRequest(null, {
+            this.sendAddRequest({
                 product_id: productId,
                 qty: qty,
                 options: firstEye,
                 packaging_id: packagingId,
-                ch_gifts: giftIds
+                ch_gifts: giftIds,
+                gift_packaging_ids: giftPackagingIds
             })
                 .then(() => {
-                    return this.sendAddRequest(null, {
+                    return this.sendAddRequest({
                         product_id: productId,
                         qty: qty,
                         options: secondEye,
                         packaging_id: packagingId,
-                        ch_gifts: []
+                        ch_gifts: [],
+                        gift_packaging_ids: giftPackagingIds
                     });
                 })
                 .done((cart) => {
                     this.open($btn, cart);
                 })
-                .fail(() => $btn.prop('disabled', false).removeClass('loading'))
                 .always(() => {
-                    if (!isMirrored) $btn.prop('disabled', false).removeClass('loading');
+                    $btn.prop('disabled', false).removeClass('loading');
                 });
 
-        } else {
-            const finalOptions = this.extractOptions(rawOptions, false);
-
-            this.sendAddRequest($btn, {
-                product_id: productId,
-                qty: qty,
-                options: finalOptions,
-                packaging_id: packagingId,
-                ch_gifts: giftIds
-            })
-                .done((cart) => {
-                    this.open($btn, cart);
-                })
-                .always(() => $btn.prop('disabled', false).removeClass('loading'));
+            return;
         }
+
+        const finalOptions = this.extractOptions(rawOptions, false);
+
+        this.sendAddRequest({
+            product_id: productId,
+            qty: qty,
+            options: finalOptions,
+            packaging_id: packagingId,
+            ch_gifts: giftIds,
+            gift_packaging_ids: giftPackagingIds
+        })
+            .done((cart) => {
+                this.open($btn, cart);
+            })
+            .always(() => {
+                $btn.prop('disabled', false).removeClass('loading');
+            });
+    }
+
+    getSelectedPackagingId() {
+        return $(this.selectors.packagingInput).val() || null;
+    }
+
+    getSelectedGiftIds() {
+        const giftIds = [];
+
+        $(this.selectors.giftCheckboxes).each(function () {
+            giftIds.push($(this).val());
+        });
+
+        return giftIds;
+    }
+
+    getSelectedGiftPackagingIds() {
+        const giftPackagingIds = [];
+
+        $(this.selectors.giftPackagingCheckboxes).each(function () {
+            giftPackagingIds.push($(this).val());
+        });
+
+        return giftPackagingIds;
+    }
+
+    getRawOptions() {
+        const rawOptions = {};
+
+        $(this.selectors.optionsContainer)
+            .find('select, input[type="radio"]:checked, input[type="hidden"]')
+            .each(function () {
+                const name = $(this).attr('name');
+                const val = $(this).val();
+
+                if (
+                    val
+                    && name
+                    && (name.startsWith('options[') || name.startsWith('m_options['))
+                ) {
+                    rawOptions[name] = val;
+                }
+            });
+
+        return rawOptions;
     }
 
     extractOptions(rawOptions, forMirror) {
         const result = {};
-        Object.keys(rawOptions).forEach(name => {
+
+        Object.keys(rawOptions).forEach((name) => {
             const val = rawOptions[name];
             const match = name.match(/\[(\d+)\]/);
+
             if (!match) return;
 
             const id = match[1];
@@ -214,25 +261,28 @@ export default class Cart {
             if (forMirror) {
                 if (isMirrorInput) {
                     result[id] = val;
-                } else if (!rawOptions.hasOwnProperty(`m_options[${id}]`)) {
+                } else if (!Object.prototype.hasOwnProperty.call(rawOptions, `m_options[${id}]`)) {
                     result[id] = val;
                 }
-            } else {
-                if (!isMirrorInput) {
-                    result[id] = val;
-                }
+
+                return;
+            }
+
+            if (!isMirrorInput) {
+                result[id] = val;
             }
         });
+
         return result;
     }
 
-    sendAddRequest($btn, payload) {
+    sendAddRequest(payload) {
         return $.ajax({
             method: 'POST',
             url: this.routes.cart_add,
             data: payload
         }).fail((xhr) => {
-            alert(xhr.responseJSON?.message || "Помилка при додаванні");
+            alert(xhr.responseJSON?.message || 'Помилка при додаванні');
         });
     }
 
@@ -241,23 +291,26 @@ export default class Cart {
             $(this.selectors.cartWrapper).html(res.html);
             this.initStickyButton();
         });
+
         if (data.quantity !== undefined) {
             $(this.selectors.cartCount).text(data.quantity);
         }
+
         if (data.total && data.total.formatted) {
             $(this.selectors.cartTotal).text(data.total.formatted);
         }
+
         if (data.html) {
             $(this.selectors.cartWrapper).html(data.html);
             this.initStickyButton();
         }
+
         if (typeof window.Korf?.data?.cartManipulationCallback === 'function') {
             window.Korf.data.cartManipulationCallback(data, event);
         }
+
         $(document).trigger('cart:updated', [data]);
     }
-
-    // Добавьте в класс Cart в JS файле
 
     bundle_add(bundleProductId) {
         const productId = $(this.selectors.productIdInput).val();
@@ -276,7 +329,7 @@ export default class Cart {
                 this.open($btn, response);
             },
             error: (xhr) => {
-                alert(xhr.responseJSON?.message || "Помилка при додаванні набору");
+                alert(xhr.responseJSON?.message || 'Помилка при додаванні набору');
             },
             complete: () => {
                 $btn.prop('disabled', false).removeClass('loading');

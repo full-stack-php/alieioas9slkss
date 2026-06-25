@@ -17,15 +17,25 @@ class CartItem implements JsonSerializable
     public $packaging;
     public $price;
 
+    public $attributes;
+    public $excludeFromCoupon = false;
+    public $isGiftPackaging = false;
+
     public function __construct($item)
     {
         $this->id = $item->id;
         $this->qty = $item->quantity;
         $this->price = $item->price;
+
+        $this->attributes = $item->attributes;
+
         $this->product = $item->attributes['product'];
         $this->options = $item->attributes['options'];
-        $this->packaging = $item->attributes['packaging']?? [];
+        $this->packaging = $item->attributes['packaging'] ?? [];
         $this->item = $item->attributes['item'] ?? $item->attributes['product'];
+
+        $this->excludeFromCoupon = (bool) ($item->attributes['exclude_from_coupon'] ?? false);
+        $this->isGiftPackaging = (bool) ($item->attributes['is_gift_packaging'] ?? false);
     }
 
     public function jsonSerialize(): array
@@ -37,6 +47,8 @@ class CartItem implements JsonSerializable
             'item' => $this->refreshStock()->item,
             'options' => $this->options->isNotEmpty() ? $this->options->keyBy('position') : new stdClass(),
             'packaging' => !empty($this->packaging) ? $this->packaging : new stdClass(),
+            'is_gift_packaging' => $this->isGiftPackaging,
+            'exclude_from_coupon' => $this->excludeFromCoupon,
             'unitPrice' => $this->unitPrice(),
             'total' => $this->totalPrice(),
         ];

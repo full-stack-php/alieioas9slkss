@@ -73,24 +73,39 @@ class ProductController extends Controller
     public function show($slug)
     {
         $product = ProductRepository::findBySlug($slug);
+
+        $product->load([
+            'productGifts.giftProduct.files',
+            'productGifts.giftProduct.translations',
+            'productGifts.giftPackaging.translations',
+            'productGifts.options.productOption',
+            'productGifts.options.productOptionValue.optionValue',
+        ]);
+
         $relatedProducts = $product->relatedProducts()->forCard()->get();
         $colorProducts = $product->colorProducts()->forCard()->get();
         $review = $this->getReviewData($product);
+
         $product->append([
             'is_in_flash_sale',
         ]);
 
         $breadcrumbs = [];
 
-        if(!is_null($product->main_category_id)){
+        if (!is_null($product->main_category_id)) {
             $category = Category::find($product->main_category_id);
             $breadcrumbs = $this->parseBreadcrumbs($category);
         }
 
-
         event(new ProductViewed($product));
 
-        return view('storefront::public.products.show', compact('product', 'relatedProducts', 'colorProducts', 'review', 'breadcrumbs'));
+        return view('storefront::public.products.show', compact(
+            'product',
+            'relatedProducts',
+            'colorProducts',
+            'review',
+            'breadcrumbs'
+        ));
     }
 
 

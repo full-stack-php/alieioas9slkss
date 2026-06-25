@@ -1,9 +1,9 @@
 <?php
 
 return [
-    'create' => 'Create :resource',
-    'show' => 'Show :resource',
-    'edit' => 'Edit :resource',
-    'delete' => 'Delete :resource',
-    'add' => 'Add :resource',
+    'create' => 'Добавление :resource',
+    'show' => 'Обзор :resource',
+    'edit' => 'Редактирование :resource',
+    'delete' => 'Удалить :resource',
+    'add' => 'Добавить :resource',
 ];

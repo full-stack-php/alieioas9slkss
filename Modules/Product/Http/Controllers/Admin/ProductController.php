@@ -12,6 +12,7 @@ use Modules\Product\Entities\Product;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Foundation\Application;
 use Modules\Admin\Traits\HasCrudActions;
+use Modules\Product\Entities\ProductPackaging;
 use Modules\Product\Http\Requests\SaveProductRequest;
 
 class ProductController
@@ -150,6 +151,53 @@ class ProductController
                 return $value !== null && $value !== '';
             }
         );
+    }
+
+    public function giftConfig(Product $product): JsonResponse
+    {
+        $product->load([
+            'options.values',
+        ]);
+
+        $packagings = ProductPackaging::withoutGlobalScope('locale')
+            ->with([
+                'translations' => function ($query) {
+                    $query->withoutGlobalScope('locale');
+                },
+            ])
+            ->where('product_id', $product->id)
+            ->where('is_active', true)
+            ->orderBy('price', 'asc')
+            ->get();
+
+        return response()->json([
+            'id' => $product->id,
+            'name' => $product->name,
+
+            'options' => $product->options->map(function ($option) {
+                return [
+                    'id' => $option->id,
+                    'option_id' => $option->option_id,
+                    'name' => $option->name,
+                    'type' => $option->type,
+                    'is_required' => (bool) $option->is_required,
+                    'values' => $option->values->map(function ($value) {
+                        return [
+                            'id' => $value->id,
+                            'option_value_id' => $value->option_value_id,
+                            'label' => $value->label,
+                        ];
+                    })->values(),
+                ];
+            })->values(),
+
+            'packagings' => $packagings->map(function ($packaging) {
+                return [
+                    'id' => $packaging->id,
+                    'name' => sprintf($packaging->name, $packaging->qty),
+                ];
+            })->values(),
+        ]);
     }
 
 }

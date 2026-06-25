@@ -7,19 +7,10 @@ use Exception;
 use Modules\Cart\CartItem;
 use Illuminate\Http\Request;
 use Modules\Cart\Facades\Cart;
-use Modules\FlashSale\Entities\FlashSale;
 use Modules\Cart\Exceptions\CartItemsStockException;
 
 class CheckCartItemsStock
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param Request $request
-     * @param Closure $next
-     *
-     * @return mixed
-     */
     public function handle(Request $request, Closure $next): mixed
     {
         try {
@@ -29,29 +20,21 @@ class CheckCartItemsStock
             });
         } catch (CartItemsStockException $e) {
             if (request()->wantsJson()) {
-                return response()->json(
-                    [
-                        'message' => $e->getMessage(),
-                    ],
-                    400
-                );
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 400);
             }
 
             return redirect()->back()->with('error', $e->getMessage());
         } catch (Exception $e) {
-            if (app()->hasDebugModeEnabled()) {
-                $message = $e->getMessage();
-            } else {
-                $message = trans('core::something_went_wrong');
-            }
+            $message = app()->hasDebugModeEnabled()
+                ? $e->getMessage()
+                : trans('core::something_went_wrong');
 
             if (request()->ajax()) {
-                return response()->json(
-                    [
-                        'message' => $message,
-                    ],
-                    400
-                );
+                return response()->json([
+                    'message' => $message,
+                ], 400);
             }
 
             return redirect()->back()->with('error', $message);
@@ -60,18 +43,21 @@ class CheckCartItemsStock
         return $next($request);
     }
 
-
     public function isInStock($cartItem)
     {
+        if (!$cartItem->item || !method_exists($cartItem->item, 'isInStock')) {
+            return true;
+        }
+
         return $cartItem->item->isInStock();
     }
 
-
-    /**
-     * @throws CartItemsStockException
-     */
     private function checkStock(CartItem $cartItem): void
     {
+        if (!$cartItem->item) {
+            return;
+        }
+
         if (!$this->isInStock($cartItem)) {
             throw new CartItemsStockException(trans('cart::messages.one_or_more_product_is_out_of_stock'));
         }
@@ -81,10 +67,12 @@ class CheckCartItemsStock
         }
     }
 
-
-
     private function hasStock(CartItem $cartItem): bool
     {
+        if (!$cartItem->item) {
+            return true;
+        }
+
         if (!$cartItem->item->manage_stock) {
             return true;
         }
