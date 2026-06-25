@@ -1,3 +1,8 @@
+@php
+    $parentProducts = $order->products->whereNull('parent_id');
+    $childrenByParent = $order->products->whereNotNull('parent_id')->groupBy('parent_id');
+@endphp
+
 <div class="order-details-middle">
     <div class="table-responsive">
         <table class="table table-borderless order-details-table">
@@ -11,64 +16,21 @@
             </thead>
 
             <tbody>
-                @foreach ($order->products as $product)
-                    <tr>
-                        <td>
-                            <a href="{{ $product->url() }}" class="product-name">
-                                {{ $product->name }}
-                            </a>
+            @foreach ($parentProducts as $product)
+                @include('storefront::public.account.orders.show.order_product_row', [
+                    'product' => $product,
+                    'order' => $order,
+                    'isChild' => false,
+                ])
 
-                            @if ($product->hasAnyVariation())
-                                <ul class="list-inline product-options">
-                                    @foreach ($product->variations as $variation)
-                                        <li>
-                                            <label>{{ $variation->name }}:</label>
-                                            {{ $variation->values()->first()?->label }}{{ $loop->last ? "" : "," }}
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @endif
-
-                            @if ($product->hasAnyOption())
-                                <ul class="list-inline product-options">
-                                    @foreach ($product->options as $option)
-                                        <li>
-                                            @if ($option->isFieldType())
-                                                <label>{{ $option->name }}:</label> {{ $option->value }}
-                                            @else
-                                                <label>{{ $option->name }}:</label> {{ $option->values->implode('label', ', ') }}
-                                            @endif
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @endif
-                        </td>
-
-                        <td>
-                            <label>{{ trans('storefront::account.view_order.unit_price') }}</label>
-
-                            <span class="product-price">
-                                {{ $product->unit_price->convert($order->currency, $order->currency_rate)->format($order->currency) }}
-                            </span>
-                        </td>
-
-                        <td>
-                            <label>{{ trans('storefront::account.view_order.quantity') }}</label>
-
-                            <span class="quantity">
-                                {{ $product->qty }}
-                            </span>
-                        </td>
-
-                        <td>
-                            <label>{{ trans('storefront::account.view_order.line_total') }}</label>
-
-                            <span class="product-price">
-                                {{ $product->line_total->convert($order->currency, $order->currency_rate)->format($order->currency) }}
-                            </span>
-                        </td>
-                    </tr>
+                @foreach($childrenByParent->get($product->id, collect()) as $childProduct)
+                    @include('storefront::public.account.orders.show.order_product_row', [
+                        'product' => $childProduct,
+                        'order' => $order,
+                        'isChild' => true,
+                    ])
                 @endforeach
+            @endforeach
             </tbody>
         </table>
     </div>
