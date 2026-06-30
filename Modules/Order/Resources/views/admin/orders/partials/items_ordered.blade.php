@@ -4,11 +4,6 @@
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            @php
-                $parentProducts = $order->products->whereNull('parent_id');
-                $childrenByParent = $order->products->whereNotNull('parent_id')->groupBy('parent_id');
-            @endphp
-
             <table class="table align-middle mb-0 table-hover table-centered">
                 <thead class="bg-light-subtle border-bottom">
                 <tr>
@@ -19,16 +14,14 @@
                 </tr>
                 </thead>
                 <tbody>
-                @foreach ($parentProducts as $product)
+                @foreach ($order->parentProducts() as $product)
                     @include('order::admin.orders.partials.order_product_row', [
                         'product' => $product,
-                        'isChild' => false,
                     ])
 
-                    @foreach($childrenByParent->get($product->id, collect()) as $childProduct)
+                    @foreach ($order->childrenForProduct($product) as $childProduct)
                         @include('order::admin.orders.partials.order_product_row', [
                             'product' => $childProduct,
-                            'isChild' => true,
                         ])
                     @endforeach
                 @endforeach

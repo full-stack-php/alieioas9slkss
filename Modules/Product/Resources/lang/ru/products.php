@@ -157,4 +157,26 @@ return [
             'download' => 'Скачать',
         ],
     ],
+    'one_c_mappings' => [
+        'title' => '1С ID опций и упаковок',
+        'single' => '1С ID запись',
+
+        'table' => [
+            'product' => 'Товар',
+            'target' => 'Упаковка / опции',
+            'external_id' => 'Заданный ID',
+            'one_c_id' => 'Итоговый 1С ID',
+        ],
+
+        'form' => [
+            'product' => 'Товар',
+            'product_search_placeholder' => 'Начните вводить название, SKU или 1С ID товара',
+            'packaging' => 'Упаковка',
+            'options' => 'Опции товара',
+            'external_id' => 'Заданный ID',
+            'one_c_id_preview' => 'Итоговый 1С ID',
+            'select_product_first' => 'Сначала выберите товар',
+            'no_options' => 'У этого товара нет опций',
+        ],
+    ],
 ];

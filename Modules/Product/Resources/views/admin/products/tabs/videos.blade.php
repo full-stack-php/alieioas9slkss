@@ -3,13 +3,7 @@
 
     if ($oldVideos !== null) {
         $videos = collect($oldVideos)->map(function ($video) {
-            return (object) [
-                'id' => $video['id'] ?? null,
-                'title' => $video['title'] ?? null,
-                'url' => $video['url'] ?? null,
-                'sort_order' => $video['sort_order'] ?? 0,
-                'is_main' => false,
-            ];
+            return \Modules\Product\Entities\ProductVideo::makeFromFormData($video);
         });
     } else {
         $videos = $product->videos;

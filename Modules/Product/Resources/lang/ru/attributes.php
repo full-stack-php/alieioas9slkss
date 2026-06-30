@@ -8,6 +8,7 @@ return [
     'brand_id' => 'Бренд',
     'manufacturer_id' => 'Производитель',
     'main_category_id' => 'Главная категория',
+    '1c_id' => 'Id Товара в 1С',
 
     'categories' => 'Категории',
     'is_mirrored' => 'Зеркальные опции',
@@ -35,7 +36,32 @@ return [
         '*.name' => 'Название',
         '*.type' => 'Тип',
         '*.values.*.label' => 'Значение',
+        '*.values.*.option_value_id' => 'Значение опции',
         '*.values.*.price' => 'Цена',
         '*.values.*.price_type' => 'Тип цены',
+        '*.values.*.special_price' => 'Скидка',
+        '*.values.*.special_price_type' => 'Тип скидки',
+        'option_id' => 'Опция',
+        'values' => [
+            'option_value_id' => 'Значение опции',
+        ],
+    ],
+    'packagings' => [
+        'name_with_locale' => 'Название упаковки (:locale)',
+        'qty' => 'Количество в упаковке',
+        'price' => 'Цена за единицу',
+        'special_price' => 'Специальная цена',
+        'special_price_type' => 'Тип специальной цены',
+    ],
+
+    'gift_packagings' => [
+        'name_with_locale' => 'Название подарочной упаковки (:locale)',
+    ],
+
+    'videos' => [
+        'title' => 'Название видео',
+        'url' => 'YouTube ссылка',
+        'sort_order' => 'Порядок видео',
+        'main_video' => 'Главное видео',
     ],
 ];

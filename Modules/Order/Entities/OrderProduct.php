@@ -106,7 +106,26 @@ class OrderProduct extends Model
 
     public function getSkuAttribute()
     {
-        // Убрали проверку на product_variant
         return $this->product->sku;
+    }
+
+    public function isGift(): bool
+    {
+        return (bool) $this->is_gift;
+    }
+
+    public function isChild(): bool
+    {
+        return !empty($this->parent_id);
+    }
+
+    public function isParent(): bool
+    {
+        return !$this->isChild();
+    }
+
+    public function hasPackaging(): bool
+    {
+        return !empty($this->packaging_id) && $this->packaging;
     }
 }

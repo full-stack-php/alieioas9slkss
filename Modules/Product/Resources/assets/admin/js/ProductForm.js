@@ -18,8 +18,6 @@ export default class {
     submit(e) {
         e.preventDefault();
         DataTable.removeLengthFields();
-
-        console.log(DataTable.getSelectedIds('#related_products .table'));
         window.form.appendHiddenInputs('#product-create-form, #product-edit-form', 'colors', DataTable.getSelectedIds('#colors .table'));
         window.form.appendHiddenInputs('#product-create-form, #product-edit-form', 'cross_sells', DataTable.getSelectedIds('#cross_sells .table'));
         window.form.appendHiddenInputs('#product-create-form, #product-edit-form', 'related_products', DataTable.getSelectedIds('#related_products .table'));

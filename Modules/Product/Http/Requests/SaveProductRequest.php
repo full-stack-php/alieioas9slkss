@@ -78,11 +78,14 @@ class SaveProductRequest extends Request
             [
                 'slug' => $this->getSlugRules(),
                 'brand_id' => ['nullable', Rule::exists('brands', 'id')],
+                '1c_id' => ['sometimes', 'integer', 'min:0'],
                 'manufacturer_id' => ['nullable', Rule::exists('brands', 'id')],
                 'tax_class_id' => ['nullable', Rule::exists('tax_classes', 'id')],
                 'price' => 'required_without:variants|nullable|numeric|min:0|max:99999999999999',
                 'special_price' => 'nullable|numeric|min:0|max:99999999999999',
+                'packagings' => ['nullable', 'array'],
                 'packagings.*.price' => 'nullable|numeric|min:0|max:99999999999999',
+                'packagings.*.qty' => ['required', 'integer', 'min:1'],
                 'packagings.*.special_price' => 'nullable|numeric|min:0|max:99999999999999',
                 'packagings.*.special_price_type' => ['nullable', Rule::in(['fixed', 'percent'])],
                 'special_price_type' => ['nullable', Rule::in(['fixed', 'percent'])],
@@ -125,11 +128,18 @@ class SaveProductRequest extends Request
 
     protected function prepareForValidation()
     {
-
-        $this->merge([
+        $data = [
             'is_mirrored' => $this->has('is_mirrored') ? $this->get('is_mirrored') === 'on' : false,
             'is_active' => $this->has('is_active') ? $this->get('is_active') === 'on' : false,
-        ]);
+        ];
+
+        if (array_key_exists('1c_id', $this->all())) {
+            $data['1c_id'] = $this->filled('1c_id')
+                ? (int) $this->input('1c_id')
+                : 0;
+        }
+
+        $this->merge($data);
     }
 
 
@@ -153,10 +163,58 @@ class SaveProductRequest extends Request
     public function getProductOptionsRules(): array
     {
         return [
-            'options.*.type' => ['nullable', 'required_with:options.*.name', Rule::in(Option::TYPES)],
-            'options.*.is_required' => ['required_with:options.*.name', 'boolean'],
-            'options.*.values.*.price' => 'nullable|numeric|min:0|max:99999999999999',
-            'options.*.values.*.price_type' => ['required', Rule::in(['fixed', 'percent'])],
+            'options' => ['nullable', 'array'],
+
+            'options.*.option_id' => [
+                'required',
+                'integer',
+                Rule::exists('options', 'id'),
+            ],
+
+            'options.*.type' => [
+                'required',
+                Rule::in(Option::TYPES),
+            ],
+
+            'options.*.is_required' => [
+                'nullable',
+                'boolean',
+            ],
+
+            'options.*.values' => [
+                'nullable',
+                'array',
+            ],
+
+            'options.*.values.*.option_value_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('option_values', 'id'),
+            ],
+
+            'options.*.values.*.price' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:99999999999999',
+            ],
+
+            'options.*.values.*.price_type' => [
+                'required',
+                Rule::in(['fixed', 'percent']),
+            ],
+
+            'options.*.values.*.special_price' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:99999999999999',
+            ],
+
+            'options.*.values.*.special_price_type' => [
+                'nullable',
+                Rule::in(['fixed', 'percent']),
+            ],
         ];
     }
 
@@ -179,5 +237,95 @@ class SaveProductRequest extends Request
         $rules[] = Rule::unique('products', 'slug')->ignore($slug, 'slug');
 
         return $rules;
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $selectTypes = [
+                'dropdown',
+                'checkbox',
+                'checkbox_custom',
+                'radio',
+                'radio_custom',
+                'multiple_select',
+            ];
+
+            foreach ((array) $this->input('options', []) as $optionIndex => $option) {
+                $type = $option['type'] ?? null;
+
+                if (!in_array($type, $selectTypes, true)) {
+                    continue;
+                }
+
+                foreach ((array) ($option['values'] ?? []) as $valueIndex => $value) {
+                    if (!empty($value['option_value_id'])) {
+                        continue;
+                    }
+
+                    $validator->errors()->add(
+                        "options.{$optionIndex}.values.{$valueIndex}.option_value_id",
+                        trans('product::validation.option_value_is_required')
+                    );
+                }
+            }
+
+            foreach ((array) $this->input('videos', []) as $videoIndex => $video) {
+                if ($this->videoRowIsEmpty($video)) {
+                    continue;
+                }
+
+                if (empty($video['url'])) {
+                    $validator->errors()->add(
+                        "videos.{$videoIndex}.url",
+                        trans('validation.required', [
+                            'attribute' => 'YouTube ссылка',
+                        ])
+                    );
+                }
+            }
+
+        });
+    }
+
+    private function videoRowIsEmpty(array $video): bool
+    {
+        $hasId = !empty($video['id']);
+        $hasTitle = !empty(trim((string) ($video['title'] ?? '')));
+        $hasUrl = !empty(trim((string) ($video['url'] ?? '')));
+
+        return !$hasId && !$hasTitle && !$hasUrl;
+    }
+
+    public function attributes(): array
+    {
+        $attributes = parent::attributes();
+
+        foreach (supported_locales() as $locale => $language) {
+            $localeLabel = mb_strtoupper($locale);
+
+            $attributes["packagings.*.{$locale}.name"] = trans('product::attributes.packagings.name_with_locale', [
+                'locale' => $localeLabel,
+            ]);
+
+            $attributes["gift_packagings.*.{$locale}.name"] = trans('product::attributes.gift_packagings.name_with_locale', [
+                'locale' => $localeLabel,
+            ]);
+        }
+
+        return array_merge($attributes, [
+            'packagings.*.qty' => trans('product::attributes.packagings.qty'),
+            'packagings.*.price' => trans('product::attributes.packagings.price'),
+            'packagings.*.special_price' => trans('product::attributes.packagings.special_price'),
+            'packagings.*.special_price_type' => trans('product::attributes.packagings.special_price_type'),
+
+            'videos.*.title' => trans('product::attributes.videos.title'),
+            'videos.*.url' => trans('product::attributes.videos.url'),
+            'videos.*.sort_order' => trans('product::attributes.videos.sort_order'),
+            'main_video' => trans('product::attributes.videos.main_video'),
+
+            'options.*.option_id' => trans('product::attributes.options.option_id'),
+            'options.*.values.*.option_value_id' => trans('product::attributes.options.values.option_value_id'),
+        ]);
     }
 }

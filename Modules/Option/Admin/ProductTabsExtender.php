@@ -24,11 +24,7 @@ class ProductTabsExtender
             $tab->weight(35);
 
             $tab->fields([
-                'options.*.name',
-                'options.*.type',
-                'options.*.values.*.label',
-                'options.*.values.*.price',
-                'options.*.values.*.price_type',
+                'options',
             ]);
 
             $tab->view('option::admin.products.tabs.options', [

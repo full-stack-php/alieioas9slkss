@@ -26,11 +26,21 @@
 </div>
 
 @push('globals')
-    <script>
-        Korf.data['product.options'] = {!! old_json('options', $product->options) !!};
-        Korf.errors['product.options'] = @json($errors->get('options.*'), JSON_FORCE_OBJECT);
-        Korf.data['get_options_link'] = "{{ route('admin.options.show', ['id' => 'REPLACE_ID']) }}";
-    </script>
+    @php
+        $optionErrors = collect($errors->getMessages())
+            ->filter(function ($messages, $key) {
+                return str_starts_with($key, 'options.');
+            })
+            ->toArray();
+    @endphp
+
+    @push('globals')
+        <script>
+            Korf.data['product.options'] = {!! old_json('options', $product->options) !!};
+            Korf.errors['product.options'] = @json($optionErrors, JSON_FORCE_OBJECT);
+            Korf.data['get_options_link'] = "{{ route('admin.options.show', ['id' => 'REPLACE_ID']) }}";
+        </script>
+    @endpush
 @endpush
 
 @include('option::admin.options.templates.product_option')

@@ -19,7 +19,6 @@
             </div>
 
             <div class="d-flex gap-2">
-                <!-- Кнопки Печати и Email из старого дизайна -->
                 <form method="POST" action="{{ route('admin.orders.email.store', $order) }}" class="d-inline-block">
                     {{ csrf_field() }}
                     <button type="submit" class="btn btn-outline-secondary" data-toggle="tooltip" title="{{ trans('order::orders.send_email') }}" data-loading>
@@ -33,43 +32,31 @@
         </div>
 
         <div class="mt-4">
-            <h4 class="fw-medium text-dark">Трекинг и Статус</h4>
+            <h4 class="fw-medium text-dark">Статус</h4>
         </div>
 
         <form action="{{ route('admin.orders.update', $order->id) }}" method="POST">
             @csrf
             @method('PUT')
             <div class="row mt-3 align-items-end">
-{{--                <div class="col-md-5">--}}
-{{--                    <div class="form-group mb-0">--}}
-{{--                        <label for="order-status" class="form-label">{{ trans('order::orders.order_status') }}</label>--}}
-{{--                        <select id="order-status" name="status" class="form-select form-control custom-select-black" data-id="{{ $order->id }}">--}}
-{{--                            @foreach (trans('order::statuses') as $name => $label)--}}
-{{--                                <option value="{{ $name }}" {{ $order->status === $name ? 'selected' : '' }}>--}}
-{{--                                    {{ $label }}--}}
-{{--                                </option>--}}
-{{--                            @endforeach--}}
-{{--                        </select>--}}
-{{--                    </div>--}}
-{{--                </div>--}}
-
-                <select name="status_id" class="form-control custom-select-black" id="order-status">
-                    @foreach (OrderStatus::list() as $id => $name)
-                        <option value="{{ $id }}" {{ $order->status_id == $id ? 'selected' : '' }}>
-                            {{ $name }}
-                        </option>
-                    @endforeach
-                </select>
-
                 <div class="col-md-5">
                     <div class="form-group mb-0">
-                        <label for="tracking_reference" class="form-label">{{ trans('order::orders.tracking_reference') }}</label>
-                        <input type="text" name="tracking_reference" id="tracking_reference" class="form-control @error('tracking_reference') is-invalid @enderror" value="{{ old('tracking_reference', $order->tracking_reference) }}" placeholder="{{ trans('order::orders.tracking_reference_placeholder') }}">
-                        @error('tracking_reference')
-                        <span class="invalid-feedback d-block">{{ $message }}</span>
-                        @enderror
+                        <label for="order-status" class="form-label">
+                            {{ trans('order::orders.order_status') }}
+                        </label>
+
+                        <select name="status"
+                                class="form-control custom-select-black"
+                                id="order-status">
+                            @foreach ($orderStatuses as $id => $name)
+                                <option value="{{ $id }}" {{ (string) $order->status === (string) $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
+
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-primary w-100">{{ trans('admin::admin.buttons.save') }}</button>
                 </div>

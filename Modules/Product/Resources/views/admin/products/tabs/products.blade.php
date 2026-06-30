@@ -92,6 +92,12 @@
             }
 
             data.except = {!! $product->id ?? "''" !!};
+
+            const selectedIds = DataTable.getSelectedIds(tableSelector_{{ $name }});
+
+            if (selectedIds.length) {
+                data.selected_ids = selectedIds;
+            }
         }
 
         @if ($name === 'related_products')

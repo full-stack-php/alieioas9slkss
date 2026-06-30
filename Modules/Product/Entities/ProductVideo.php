@@ -71,4 +71,21 @@ class ProductVideo extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function hasYoutubePreview(): bool
+    {
+        return !empty($this->youtube_id) && !empty($this->thumbnail_url);
+    }
+
+    public static function makeFromFormData(array $data): self
+    {
+        return new self([
+            'id' => $data['id'] ?? null,
+            'title' => $data['title'] ?? null,
+            'url' => $data['url'] ?? null,
+            'youtube_id' => self::extractYoutubeId($data['url'] ?? null),
+            'is_main' => false,
+            'sort_order' => $data['sort_order'] ?? 0,
+        ]);
+    }
 }

@@ -41,13 +41,6 @@ export default class extends BaseOption {
     }
 
     getInputFieldForErrorKey(key) {
-        let keyParts = key.split('.');
-
-        // Replace all "_" to "-".
-        keyParts = keyParts.map(k => {
-            return k.split('_').join('-');
-        });
-
-        return $(`#${keyParts.join('-')}`);
+        return super.getInputFieldForErrorKey(key);
     }
 }

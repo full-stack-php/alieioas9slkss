@@ -2,38 +2,39 @@
 
 namespace Modules\Order\Http\Controllers\Admin;
 
+use Illuminate\Http\Response;
 use Modules\Order\Entities\Order;
+use Modules\Order\Entities\OrderStatus;
 use Modules\Admin\Traits\HasCrudActions;
 
 class OrderController
 {
     use HasCrudActions;
 
-    /**
-     * Model for the resource.
-     *
-     * @var string
-     */
     protected $model = Order::class;
 
-    /**
-     * The relations to eager load on every query.
-     *
-     * @var array
-     */
-    protected $with = ['products', 'coupon'];
+    protected $with = [
+        'products',
+        'products.children',
+        'products.parent',
+        'products.options.values',
+        'products.packaging',
+        'products.product',
+        'coupon',
+        'orderStatus.translation',
+    ];
 
-    /**
-     * Label of the resource.
-     *
-     * @var string
-     */
     protected $label = 'order::orders.order';
 
-    /**
-     * View path of the resource.
-     *
-     * @var string
-     */
     protected $viewPath = 'order::admin.orders';
+
+    public function show($id): Response
+    {
+        $order = $this->getEntity($id);
+
+        return response()->view("{$this->viewPath}.show", [
+            'order' => $order,
+            'orderStatuses' => OrderStatus::list(),
+        ]);
+    }
 }

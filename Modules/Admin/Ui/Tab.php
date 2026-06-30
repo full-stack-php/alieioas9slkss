@@ -145,8 +145,8 @@ class Tab
     {
         $htmlString =  "<a class='nav-link {$this->activeClass()} {$this->errorClass()}' id='vl-pills-{$this->name}-tab' data-bs-toggle='pill' href='#vl-pills-{$this->name}' role='tab' aria-controls='vl-pills-{$this->name}' aria-selected='true'><span>{$this->label}";
 
-        if ($this->errors->hasAny($this->fields)) {
-            $htmlString .= "<i class='fa fa-exclamation-circle' aria-hidden='true'></i>";
+        if ($this->hasErrors()) {
+            $htmlString .= "<i class='bx bx-error fs-18 align-middle me-1'></i>";
         }
 
         $htmlString .= "</span></a>";
@@ -282,9 +282,48 @@ class Tab
      */
     private function errorClass()
     {
-        return $this->errors->hasAny($this->fields) ? 'has-error' : '';
+        return $this->hasErrors() ? 'has-error' : '';
     }
 
+    private function hasErrors(): bool
+    {
+        if ($this->errors->hasAny($this->fields)) {
+            return true;
+        }
+
+        $errorKeys = $this->errors->getBag('default')->keys();
+
+        foreach ($errorKeys as $errorKey) {
+            foreach ($this->fields as $field) {
+                if ($this->fieldMatchesErrorKey($field, $errorKey)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function fieldMatchesErrorKey(string $field, string $errorKey): bool
+    {
+        $field = trim($field);
+
+        if ($field === '') {
+            return false;
+        }
+
+        $field = $this->normalizeFieldKey($field);
+
+        return $errorKey === $field
+            || str_starts_with($errorKey, "{$field}.");
+    }
+
+    private function normalizeFieldKey(string $field): string
+    {
+        $field = str_replace(['[]', '[', ']'], ['', '.', ''], $field);
+
+        return trim($field, '.');
+    }
 
     public function toArray()
     {

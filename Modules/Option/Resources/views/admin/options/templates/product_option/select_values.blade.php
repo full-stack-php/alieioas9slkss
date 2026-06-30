@@ -33,12 +33,14 @@
         <td>
             <input type="number"
                    name="options[<%- optionId %>][values][<%- valueId %>][price]"
+                   id="option-<%- optionId %>-values-<%- valueId %>-price"
                    class="form-control"
                    value="<%- value.price %>"
                    step="0.01" min="0">
         </td>
         <td>
             <select name="options[<%- optionId %>][values][<%- valueId %>][price_type]"
+                    id="option-<%- optionId %>-values-<%- valueId %>-price-type"
                     class="form-control custom-select-black">
                 <option value="fixed" <%= value.price_type === 'fixed' ? 'selected' : '' %>>
                 {{ trans('option::options.form.price_types.fixed') }}
@@ -51,12 +53,14 @@
         <td>
             <input type="number"
                    name="options[<%- optionId %>][values][<%- valueId %>][special_price]"
+                   id="option-<%- optionId %>-values-<%- valueId %>-special-price"
                    class="form-control"
                    value="<%- value.special_price %>"
                    step="0.01" min="0">
         </td>
         <td>
             <select name="options[<%- optionId %>][values][<%- valueId %>][special_price_type]"
+                    id="option-<%- optionId %>-values-<%- valueId %>-special-price-type"
                     class="form-control custom-select-black">
                 <option value="fixed" <%= value.special_price_type === 'fixed' ? 'selected' : '' %>>
                 {{ trans('option::options.form.price_types.fixed') }}

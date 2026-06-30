@@ -103,4 +103,52 @@ class CartItem implements JsonSerializable
     {
         return (int) ($this->attributes['min_qty'] ?? 1);
     }
+
+    public function attribute(string $key, $default = null)
+    {
+        if ($this->attributes instanceof \Illuminate\Support\Collection) {
+            return $this->attributes->get($key, $default);
+        }
+
+        if (is_array($this->attributes)) {
+            return $this->attributes[$key] ?? $default;
+        }
+
+        return data_get($this->attributes, $key, $default);
+    }
+
+    public function parentId(): ?string
+    {
+        return $this->attribute('parent_id');
+    }
+
+    public function isChild(): bool
+    {
+        return !empty($this->parentId());
+    }
+
+    public function isParent(): bool
+    {
+        return !$this->isChild();
+    }
+
+    public function hasOptions(): bool
+    {
+        return $this->options->isNotEmpty();
+    }
+
+    public function hasPackaging(): bool
+    {
+        return !empty($this->packaging->id);
+    }
+
+    public function isRemovable(): bool
+    {
+        return true;
+    }
+
+    public function canChangeQuantity(): bool
+    {
+        return !$this->isGift();
+    }
 }

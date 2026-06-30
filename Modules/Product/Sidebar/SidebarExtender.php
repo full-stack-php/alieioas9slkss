@@ -22,6 +22,7 @@ class SidebarExtender extends BaseSidebarExtender
                         'admin.products.create',
                         'admin.products.index',
                         'admin.categories.index',
+                        'admin.product_one_c_mappings.index',
                         'admin.attributes.index',
                         'admin.attribute_sets.index',
                         'admin.options.index',
@@ -35,6 +36,15 @@ class SidebarExtender extends BaseSidebarExtender
                     $item->isActiveWhen(route('admin.products.index', null, false));
                     $item->authorize(
                         $this->auth->hasAccess('admin.products.index')
+                    );
+                });
+                $item->item(trans('product::sidebar.one_c_mappings'), function (Item $item) {
+                    $item->weight(7);
+                    $item->setItemClass('sub-nav-item');
+                    $item->route('admin.product_one_c_mappings.index');
+                    $item->isActiveWhen(route('admin.product_one_c_mappings.index', null, false));
+                    $item->authorize(
+                        $this->auth->hasAccess('admin.product_one_c_mappings.index')
                     );
                 });
             });

@@ -1,14 +1,65 @@
 export default class {
     addOptionsErrors(errors) {
         for (let key in errors) {
-            let inputField = this.getInputFieldForErrorKey(key);
+            const inputField = this.getInputFieldForErrorKey(key);
 
-            inputField.closest(".option").addClass("option-has-errors");
+            if (!inputField.length) {
+                continue;
+            }
 
-            let parent = inputField.parent();
+            inputField.addClass('is-invalid');
 
-            parent.append(`<span class="help-block">${errors[key][0]}</span>`);
+            const option = inputField.closest('.accordion-item, .option');
+
+            option.addClass('option-has-errors');
+
+            const accordionButton = option.find('.accordion-button').first();
+
+            accordionButton.addClass('has-error');
+
+            if (!accordionButton.find('.option-error-icon').length) {
+                accordionButton.prepend(
+                    `<i class="bx bx-error fs-18 align-middle me-1 text-danger option-error-icon"></i>`
+                );
+            }
+
+            const parent = inputField.closest('.form-group').length
+                ? inputField.closest('.form-group')
+                : inputField.parent();
+
+            if (!parent.find(`[data-error-key="${key}"]`).length) {
+                parent.append(
+                    `<div class="invalid-feedback d-block" data-error-key="${key}">${errors[key][0]}</div>`
+                );
+            }
         }
+    }
+
+
+    getInputFieldForErrorKey(key) {
+        const name = this.errorKeyToInputName(key);
+
+        let field = $(`[name="${name}"]`);
+
+        if (field.length) {
+            return field;
+        }
+
+        const id = this.errorKeyToInputId(key);
+
+        return $(`#${id}`);
+    }
+
+    errorKeyToInputName(key) {
+        const parts = key.split('.');
+
+        return parts.shift() + parts.map((part) => `[${part}]`).join('');
+    }
+
+    errorKeyToInputId(key) {
+        return key
+            .replaceAll('.', '-')
+            .replaceAll('_', '-');
     }
 
     getRowTemplate(data) {

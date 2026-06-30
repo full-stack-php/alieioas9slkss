@@ -8,13 +8,14 @@ export default class extends BaseOption {
 
         const rawOptions = Korf.data['product.options'] || [];
 
-        this.restoreOptions(rawOptions);
+        this.restoreOptions(rawOptions).then(() => {
+            if (this.optionsCount > 3) {
+                this.collapseOptions();
+            }
 
-        if (this.optionsCount > 3) {
-            this.collapseOptions();
-        }
+            super.addOptionsErrors(Korf.errors['product.options'] || []);
+        });
 
-        super.addOptionsErrors(Korf.errors['product.options'] || []);
         $('#add-global-option').on('click', () => this.addGlobalOption());
     }
 
@@ -47,7 +48,8 @@ export default class extends BaseOption {
                     let fullData = response.data || response;
                     let mergedOption = {
                         ...fullData,
-                        id: oldOption.option_id || oldOption.id,
+                        option_id: oldOption.option_id || fullData.id || oldOption.id,
+                        product_option_id: oldOption.id || null,
                         is_required: oldOption.is_required,
                         values_assigned: oldOption.values || []
                     };
@@ -86,9 +88,13 @@ export default class extends BaseOption {
 
     addOption(option) {
         let optionId = this.optionsCount++;
+
+        option.option_id = option.option_id || option.id;
         option.is_required = [true, 1, "1"].includes(option.is_required);
 
-        this.availableValues[optionId] = (option.option && option.option.values) ? option.option.values : (option.values || []);
+        this.availableValues[optionId] = (option.option && option.option.values)
+            ? option.option.values
+            : (option.values || []);
 
         let template = _.template($('#option-template').html());
         let $html = $(template({ option, optionId }));

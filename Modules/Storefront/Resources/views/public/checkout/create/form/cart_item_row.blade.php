@@ -1,9 +1,7 @@
 @php
     $product = $cartItem->item;
     $isGift = $cartItem->isGift();
-    $hasOptions = $cartItem->options->isNotEmpty();
-    $packaging = $cartItem->packaging->id ?? null;
-    $isChild = $isChild ?? false;
+    $isChild = $cartItem->isChild();
     $parentCartItem = $parentCartItem ?? null;
 @endphp
 
@@ -51,7 +49,7 @@
             </div>
         @endif
 
-        @if ($hasOptions)
+        @if ($cartItem->hasOptions())
             <div class="cart-item-options">
                 @foreach ($cartItem->options as $option)
                     <div class="cart-item-option d-flex">
@@ -67,7 +65,7 @@
             </div>
         @endif
 
-        @if ($packaging)
+        @if ($cartItem->hasPackaging())
             <div class="cart-item-options">
                 <div class="cart-item-option d-flex">
                     <div class="cart-item-option-name">
@@ -84,7 +82,7 @@
 
     <div class="cart-item-price-quantity d-flex">
         <div class="d-flex justify-content-end align-items-center">
-            @if(!$isGift)
+            @if($cartItem->canChangeQuantity())
                 <div class="ch-cart-quantity border rounded">
                     <span class="input-btn">
                         <button class="btn btn-quantity-minus opc-btn-update"
@@ -122,15 +120,17 @@
                 </div>
             @endif
 
-            <button type="button"
-                    title="{{ trans('storefront::cart.remove') }}"
-                    class="btn btn-remove opc-btn-remove"
-                    data-action="remove"
-                    data-key="{{ $cartItem->id }}">
-                <svg class="icon icon-11">
-                    <use xlink:href="#cross"></use>
-                </svg>
-            </button>
+            @if($cartItem->isRemovable())
+                <button type="button"
+                        title="{{ trans('storefront::cart.remove') }}"
+                        class="btn btn-remove opc-btn-remove"
+                        data-action="remove"
+                        data-key="{{ $cartItem->id }}">
+                    <svg class="icon icon-11">
+                        <use xlink:href="#cross"></use>
+                    </svg>
+                </button>
+            @endif
         </div>
 
         <div class="cart-totals d-flex">

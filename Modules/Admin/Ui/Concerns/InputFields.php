@@ -134,16 +134,18 @@ trait InputFields
             $value = e($value);
         }
 
-        $normalizedName = $this->normalizeTranslatableFieldName($name);
+        $errorName = $this->normalizeTranslatableFieldNameError($name);
 
         $name = array_get($options, 'multiple', false) ? "{$name}[]" : $name;
         $required = array_pull($options, 'required', false);
         $help = array_pull($options, 'help', false);
 
+        $class = trim(array_pull($options, 'class') . ' ' . ($errors->has($errorName) ? 'is-invalid' : ''));
+
         $params = array_merge([
             $name,
             $value,
-            array_pull($options, 'class'),
+            $class,
             $this->generateHtmlAttributes($options),
             $options,
         ], $args);
@@ -155,16 +157,14 @@ trait InputFields
 
         $html .= $this->label($name, $title, $labelCol, $required);
 
-//        $html .= "<div class='col-md-{$fieldCol}'>";
         $html .= call_user_func_array($fieldCallback, $params);
 
-        if ($help && !$errors->has($normalizedName)) {
+        if ($help && !$errors->has($errorName)) {
             $html .= "<span class='help-block'>{$help}</span>";
         }
 
-        $html .= $errors->first($this->normalizeTranslatableFieldNameError($name), '<div class="is-invalid text-red">:message</div>');
+        $html .= $errors->first($errorName, '<div class="invalid-feedback d-block">:message</div>');
 
-//        $html .= '</div>';
         $html .= '</div>';
 
         return new HtmlString($html);

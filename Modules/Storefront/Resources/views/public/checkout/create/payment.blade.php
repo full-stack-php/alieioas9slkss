@@ -11,7 +11,6 @@
         @else
             @foreach ($gateways as $name => $gateway)
                 @php
-                    // Определяем, выбран ли этот метод по умолчанию (старый инпут или первый в списке)
                     $isChecked = (old('payment_method') == $name) || (empty(old('payment_method')) && $loop->first);
                 @endphp
 
@@ -51,13 +50,12 @@
     </div>
 </div>
 
-{{-- Интеграция Stripe, если включена --}}
 @if (setting('stripe_enabled') && setting('stripe_integration_type') === 'embedded_form')
     @php
         $isStripeSelected = (old('payment_method') === 'stripe') || (empty(old('payment_method')) && isset($gateways['stripe']) && array_key_first($gateways->toArray()) === 'stripe');
     @endphp
 
     <div id="stripe-element" style="display: {{ $isStripeSelected ? 'block' : 'none' }}; margin-top: 15px; padding: 15px; border: 1px solid #e5e5e5; border-radius: 4px;">
-        {{-- Сюда будет динамически монтироваться Stripe Element через ваш JS --}}
+
     </div>
 @endif

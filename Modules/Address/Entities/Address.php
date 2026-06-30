@@ -36,4 +36,21 @@ class Address extends Model
     {
         return Country::name($this->country);
     }
+
+    public function isDefaultForNpType(array $defaultAddressIdsByType): bool
+    {
+        $npAddressType = (int) $this->np_address_type;
+
+        return isset($defaultAddressIdsByType[$npAddressType])
+            && (int) $defaultAddressIdsByType[$npAddressType] === (int) $this->id;
+    }
+
+    public function isSelectedBillingAddress(?string $oldBillingAddressId, array $defaultAddressIdsByType): bool
+    {
+        if ((string) $oldBillingAddressId === (string) $this->id) {
+            return true;
+        }
+
+        return empty($oldBillingAddressId) && $this->isDefaultForNpType($defaultAddressIdsByType);
+    }
 }

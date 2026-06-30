@@ -462,6 +462,32 @@ class Cart extends DarryldecodeCart implements JsonSerializable
             });
     }
 
+    public function parentItems(): Collection
+    {
+        return $this->items()->filter(function (CartItem $cartItem) {
+            return $cartItem->isParent();
+        });
+    }
+
+    public function childItems(): Collection
+    {
+        return $this->items()->filter(function (CartItem $cartItem) {
+            return $cartItem->isChild();
+        });
+    }
+
+    public function childItemsGroupedByParent(): Collection
+    {
+        return $this->childItems()->groupBy(function (CartItem $cartItem) {
+            return $cartItem->parentId();
+        });
+    }
+
+    public function childrenFor(CartItem $cartItem): Collection
+    {
+        return $this->childItemsGroupedByParent()->get($cartItem->id, collect());
+    }
+
     public function updateQuantity($id, $qty): void
     {
         $cartItem = $this->get($id);

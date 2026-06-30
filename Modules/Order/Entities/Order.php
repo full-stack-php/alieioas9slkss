@@ -113,11 +113,19 @@ class Order extends Model
      *
      * @return string
      */
-    public function getShippingMethodAttribute($shippingMethod)
+    public function getShippingMethodAttribute($shippingMethod): ?string
     {
-        $labelData = ShippingMethod::get($shippingMethod)->label;
+        if (is_null($shippingMethod)) {
+            return null;
+        }
 
-        return $labelData[app()->getLocale()]['value'] ?? null;
+        $method = ShippingMethod::get($shippingMethod);
+
+        if (!$method) {
+            return (string) $shippingMethod;
+        }
+
+        return $this->localizedLabel($method->label ?? $shippingMethod);
     }
 
 
@@ -128,9 +136,58 @@ class Order extends Model
      *
      * @return string
      */
-    public function getPaymentMethodAttribute($paymentMethod)
+    public function getPaymentMethodAttribute($paymentMethod): string
     {
-        return Gateway::get($paymentMethod)->label ?? '';
+        $gateway = Gateway::get($paymentMethod);
+
+        if (!$gateway) {
+            return (string) $paymentMethod;
+        }
+
+        return $this->localizedLabel($gateway->label ?? $paymentMethod);
+    }
+
+    private function localizedLabel($label): string
+    {
+        if (is_string($label)) {
+            return $label;
+        }
+
+        if (!is_array($label)) {
+            return (string) $label;
+        }
+
+        $locale = app()->getLocale();
+
+        if (isset($label[$locale]['value'])) {
+            return (string) $label[$locale]['value'];
+        }
+
+        if (isset($label[$locale]) && is_string($label[$locale])) {
+            return $label[$locale];
+        }
+
+        $fallbackLocale = config('app.fallback_locale');
+
+        if (isset($label[$fallbackLocale]['value'])) {
+            return (string) $label[$fallbackLocale]['value'];
+        }
+
+        if (isset($label[$fallbackLocale]) && is_string($label[$fallbackLocale])) {
+            return $label[$fallbackLocale];
+        }
+
+        $first = reset($label);
+
+        if (is_array($first) && isset($first['value'])) {
+            return (string) $first['value'];
+        }
+
+        if (is_string($first)) {
+            return $first;
+        }
+
+        return '';
     }
 
 
@@ -351,6 +408,30 @@ class Order extends Model
             'total' => $orders->sumTotal(),
             'total_orders' => $orders->count(),
         ];
+    }
+
+    public function parentProducts(): Collection
+    {
+        return $this->products->filter(function (OrderProduct $product) {
+            return $product->isParent();
+        });
+    }
+
+    public function childProducts(): Collection
+    {
+        return $this->products->filter(function (OrderProduct $product) {
+            return $product->isChild();
+        });
+    }
+
+    public function childProductsGroupedByParent(): Collection
+    {
+        return $this->childProducts()->groupBy('parent_id');
+    }
+
+    public function childrenForProduct(OrderProduct $product): Collection
+    {
+        return $this->childProductsGroupedByParent()->get($product->id, collect());
     }
 
 }

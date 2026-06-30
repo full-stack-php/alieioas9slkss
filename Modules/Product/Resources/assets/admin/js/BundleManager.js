@@ -85,8 +85,6 @@ export default class {
         element.addEventListener('addItem', (event) => {
             let selectedId = event.detail.value;
             let product = currentData.find(p => String(p.id) === String(selectedId));
-            console.log(product);
-            console.log(selectedId);
 
 
             if (product && product.price) {

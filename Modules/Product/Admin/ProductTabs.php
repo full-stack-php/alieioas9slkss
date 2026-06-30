@@ -37,7 +37,17 @@ class ProductTabs extends Tabs
         return tap(new Tab('general', trans('product::products.tabs.general')), function (Tab $tab) {
             $tab->active();
             $tab->weight(5);
-            $tab->fields(['name', 'description', 'brand_id', 'tax_class_id', 'is_active']);
+            $tab->fields([
+                'name',
+                'h1_name',
+                'description',
+                'brand_id',
+                'manufacturer_id',
+                'main_category_id',
+                'categories',
+                'is_mirrored',
+                'is_active',
+            ]);
             $tab->view('product::admin.products.tabs.general', [
                 'brands' => $this->brands(),
                 'categories' => Category::treeList(),
@@ -92,6 +102,7 @@ class ProductTabs extends Tabs
     {
         return tap(new Tab('packaging', trans('product::products.tabs.packaging')), function (Tab $tab) {
             $tab->weight(30);
+            $tab->fields(['packagings']);
             $tab->view('product::admin.products.tabs.packaging');
         });
     }
@@ -99,6 +110,7 @@ class ProductTabs extends Tabs
     {
         return tap(new Tab('gifts', trans('product::products.tabs.gifts')), function (Tab $tab) {
             $tab->weight(45);
+            $tab->fields(['product_gifts']);
             $tab->view('product::admin.products.tabs.gifts');
         });
     }
@@ -106,6 +118,7 @@ class ProductTabs extends Tabs
     {
         return tap(new Tab('bundles', trans('product::products.tabs.bundles')), function (Tab $tab) {
             $tab->weight(40);
+            $tab->fields(['bundles']);
             $tab->view('product::admin.products.tabs.product_bundles');
         });
     }
@@ -123,6 +136,7 @@ class ProductTabs extends Tabs
     {
         return tap(new Tab('related_products', trans('product::products.tabs.related_products')), function (Tab $tab) {
             $tab->weight(65);
+            $tab->fields(['related_products']);
             $tab->view('product::admin.products.tabs.products', $this->productPickerData('related_products'));
         });
     }
@@ -139,6 +153,7 @@ class ProductTabs extends Tabs
     {
         return tap(new Tab('colors', trans('product::products.tabs.colors')), function (Tab $tab) {
             $tab->weight(40);
+            $tab->fields(['colors']);
             $tab->view('product::admin.products.tabs.products', $this->productPickerData('colors'));
         });
     }
@@ -154,6 +169,7 @@ class ProductTabs extends Tabs
     {
         return tap(new Tab('cross_sells', trans('product::products.tabs.cross_sells')), function (Tab $tab) {
             $tab->weight(65);
+            $tab->fields(['cross_sells']);
             $tab->view('product::admin.products.tabs.products', $this->productPickerData('cross_sells'));
         });
     }
@@ -210,6 +226,7 @@ class ProductTabs extends Tabs
     {
         return tap(new Tab('videos', trans('product::products.tabs.videos')), function (Tab $tab) {
             $tab->weight(25);
+            $tab->fields(['videos', 'main_video']);
             $tab->view('product::admin.products.tabs.videos');
         });
     }
@@ -218,6 +235,7 @@ class ProductTabs extends Tabs
     {
         return tap(new Tab('documents', trans('product::products.tabs.documents')), function (Tab $tab) {
             $tab->weight(27);
+            $tab->fields(['downloads']);
             $tab->view('product::admin.products.tabs.documents');
         });
     }

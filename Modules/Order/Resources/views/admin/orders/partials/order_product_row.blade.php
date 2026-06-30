@@ -1,6 +1,6 @@
-<tr class="{{ $isChild ? 'table-success' : '' }}">
+<tr class="{{ $product->isChild() ? 'table-success' : '' }}">
     <td>
-        <div class="d-flex align-items-center gap-2 {{ $isChild ? 'ms-4' : '' }}">
+        <div class="d-flex align-items-center gap-2 {{ $product->isChild() ? 'ms-4' : '' }}">
             <div class="rounded bg-light avatar-md d-flex align-items-center justify-content-center">
                 @if($product->product && $product->product->base_image->exists)
                     <img src="{{ $product->product->base_image->path }}"
@@ -12,22 +12,24 @@
             </div>
 
             <div>
-                @if($product->is_gift)
-                    <div class="text-success fw-semibold fs-13">🎁 Подарок</div>
+                @if($product->isGift())
+                    <div class="text-success fw-semibold fs-13">
+                        🎁 Подарок
+                    </div>
                 @endif
 
                 @if ($product->trashed())
                     <span class="text-dark fw-medium fs-15">
-                        {{ $isChild ? '↳ ' : '' }}{{ $product->name }}
+                        {{ $product->isChild() ? '↳ ' : '' }}{{ $product->name }}
                     </span>
                 @else
                     <a href="{{ route('admin.products.edit', $product->product->id) }}"
                        class="text-dark fw-medium fs-15">
-                        {{ $isChild ? '↳ ' : '' }}{{ $product->name }}
+                        {{ $product->isChild() ? '↳ ' : '' }}{{ $product->name }}
                     </a>
                 @endif
 
-                @if($product->packaging)
+                @if($product->hasPackaging())
                     <p class="text-muted mb-0 mt-1 fs-13">
                         Упаковка: {{ $product->packaging->name }} ({{ $product->packaging->qty }} шт.)
                     </p>
@@ -37,6 +39,7 @@
                     <p class="text-muted mb-0 mt-1 fs-13">
                         @foreach ($product->options as $option)
                             <span>{{ $option->name }}: </span>
+
                             <span class="text-dark">
                                 @if ($option->option->isFieldType())
                                     {{ $option->value }}

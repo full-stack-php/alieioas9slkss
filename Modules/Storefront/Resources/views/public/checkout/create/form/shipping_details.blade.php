@@ -8,32 +8,12 @@
 
             @auth
                 @if($addresses->isNotEmpty())
-                    @php
-                        $defaultAddressIdsByType = \Modules\Account\Entities\DefaultAddress::query()
-                            ->where('customer_id', auth()->id())
-                            ->whereNotNull('np_address_type')
-                            ->pluck('address_id', 'np_address_type')
-                            ->toArray();
-
-                        $oldBillingAddressId = old('billing_address_id');
-                    @endphp
-
                     <div
                         class="saved-billing-addresses"
                         id="saved-billing-addresses"
                         style="margin-bottom: 20px;"
                     >
                         @foreach($addresses as $address)
-                            @php
-                                $npAddressType = (int) $address->np_address_type;
-
-                                $isDefaultForType = isset($defaultAddressIdsByType[$npAddressType])
-                                    && (int) $defaultAddressIdsByType[$npAddressType] === (int) $address->id;
-
-                                $isChecked = (string) $oldBillingAddressId === (string) $address->id
-                                    || (empty($oldBillingAddressId) && $isDefaultForType);
-                            @endphp
-
                             <div
                                 class="radio chm-radio saved-address-item"
                                 data-np-address-type="{{ $address->np_address_type }}"
@@ -54,7 +34,7 @@
                                         data-zip="{{ e($address->zip) }}"
                                         data-country="{{ e($address->country) }}"
                                         data-np-address-type="{{ $address->np_address_type }}"
-                                        {{ $isChecked ? 'checked="checked"' : '' }}
+                                        {{ $address->isSelectedBillingAddress($oldBillingAddressId, $defaultAddressIdsByType) ? 'checked="checked"' : '' }}
                                     >
 
                                     <span class="checkbox-radio"></span>
@@ -63,6 +43,7 @@
                                     {{ $address->state_name ?? $address->state }},
                                     {{ $address->city }},
                                     {{ $address->address_1 }}
+
                                     @if($address->address_2)
                                         {{ $address->address_2 }},
                                     @endif
@@ -93,18 +74,7 @@
                 @endif
             @endauth
 
-                @php
-                    $showNewForm = !auth()->check()
-                        || $addresses->isEmpty()
-                        || old('billing_address_id') === 'new'
-                        || $errors->has('billing.first_name')
-                        || $errors->has('billing.last_name')
-                        || $errors->has('billing.state')
-                        || $errors->has('billing.city')
-                        || $errors->has('billing.address_1');
-                @endphp
-
-            <div id="new-billing-address-form" class="row" style="display: {{ $showNewForm ? 'flex' : 'none' }};">
+            <div id="new-billing-address-form" class="row" style="display: {{ $showNewBillingAddressForm ? 'flex' : 'none' }};">
 
                 <input type="hidden" value="UA" name="billing[country]" id="billing-country" >
 

@@ -188,7 +188,6 @@ export default class ProductGiftManager {
                 return response.json();
             })
             .then((data) => {
-                console.log('gift-config response:', data);
 
                 this.renderGiftOptions(row, data.options || []);
                 this.renderGiftPackagings(row, data.packagings || []);

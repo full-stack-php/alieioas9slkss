@@ -92,14 +92,18 @@ class CheckoutController extends Controller
         Cart::clearCartConditions();
 
         $cart = Cart::instance();
+        $addresses = $this->getAddresses();
 
         return view('storefront::public.checkout.create', [
-            'cart' => Cart::instance(),
+            'cart' => $cart,
             'countries' => Country::supported(),
             'gateways' => Gateway::all(),
             'shippingMethods' => $cart->availableShippingMethods(),
             'defaultAddress' => auth()->user()->defaultAddress ?? new DefaultAddress,
-            'addresses' => $this->getAddresses(),
+            'addresses' => $addresses,
+            'defaultAddressIdsByType' => $this->getDefaultAddressIdsByType(),
+            'showNewBillingAddressForm' => $this->shouldShowNewBillingAddressForm($addresses),
+            'oldBillingAddressId' => old('billing_address_id'),
             'termsPageURL' => Page::urlForPage(setting('storefront_terms_page')),
         ]);
     }
@@ -117,5 +121,41 @@ class CheckoutController extends Controller
         }
 
         return auth()->user()->addresses->keyBy('id');
+    }
+
+    private function getDefaultAddressIdsByType(): array
+    {
+        if (auth()->guest()) {
+            return [];
+        }
+
+        return DefaultAddress::query()
+            ->where('customer_id', auth()->id())
+            ->whereNotNull('np_address_type')
+            ->pluck('address_id', 'np_address_type')
+            ->toArray();
+    }
+
+    private function shouldShowNewBillingAddressForm(Collection $addresses): bool
+    {
+        return auth()->guest()
+            || $addresses->isEmpty()
+            || old('billing_address_id') === 'new'
+            || $this->hasBillingAddressErrors();
+    }
+
+    private function hasBillingAddressErrors(): bool
+    {
+        $errors = session('errors');
+
+        if (!$errors) {
+            return false;
+        }
+
+        return $errors->has('billing.first_name')
+            || $errors->has('billing.last_name')
+            || $errors->has('billing.state')
+            || $errors->has('billing.city')
+            || $errors->has('billing.address_1');
     }
 }

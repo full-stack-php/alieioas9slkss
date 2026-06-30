@@ -98,17 +98,71 @@ export default class {
 
     addProductAttributesErrors(errors) {
         for (let key in errors) {
-            let id = $.escapeSelector(key);
-            let parent = $(`#${id}`).closest('.form-group, td');
+            const inputField = this.getInputFieldForErrorKey(key);
 
-            parent.addClass('has-error');
-            parent.append(`<span class="help-block">${errors[key][0]}</span>`);
+            if (!inputField.length) {
+                continue;
+            }
+
+            inputField.addClass('is-invalid');
+
+            this.markChoicesAsInvalid(inputField);
+
+            const row = inputField.closest('tr');
+
+            row.addClass('attribute-has-errors');
+
+            const parent = inputField.closest('.form-group').length
+                ? inputField.closest('.form-group')
+                : inputField.closest('td');
+
+            if (!parent.find(`[data-error-key="${key}"]`).length) {
+                parent.append(
+                    `<div class="invalid-feedback d-block" data-error-key="${key}">${errors[key][0]}</div>`
+                );
+            }
+        }
+    }
+
+    getInputFieldForErrorKey(key) {
+        const names = this.errorKeyToInputNames(key);
+
+        for (let name of names) {
+            const field = $(`[name="${name}"]`);
+
+            if (field.length) {
+                return field;
+            }
+        }
+
+        const id = $.escapeSelector(key);
+
+        return $(`#${id}`);
+    }
+
+    errorKeyToInputNames(key) {
+        const parts = key.split('.');
+        const first = parts.shift();
+
+        const name = first + parts.map((part) => `[${part}]`).join('');
+
+        return [
+            name,
+            `${name}[]`,
+        ];
+    }
+
+    markChoicesAsInvalid(inputField) {
+        const choices = inputField.closest('.form-group').find('.choices');
+
+        if (choices.length) {
+            choices.addClass('is-invalid');
+            choices.find('.choices__inner').addClass('is-invalid');
         }
     }
 
     deleteProductAttribute(e) {
         const $tr = $(e.currentTarget).closest('tr');
-        // Опционально: удаляем экземпляры из памяти при удалении строки
         $tr.find('select').each((i, el) => {
             if (this.choicesInstances[el.id]) {
                 this.choicesInstances[el.id].destroy();

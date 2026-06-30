@@ -350,6 +350,19 @@ class Product extends Model implements Sitemapable
                 $query->whereNotIn('id', explode(',', $request->except));
             });
 
+        $selectedIds = collect((array) $request->input('selected_ids', []))
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->toArray();
+
+        if (!empty($selectedIds)) {
+            $ids = implode(',', $selectedIds);
+
+            $query->orderByRaw("FIELD(products.id, {$ids}) DESC");
+        }
+
         $query->when($request->filled('page_filter_brand_id'), function ($q) use ($request) {
             $q->where('brand_id', $request->input('page_filter_brand_id'));
         });

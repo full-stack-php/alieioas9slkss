@@ -22,4 +22,7 @@
             @endforeach
         </div>
     </div>
+    <div class="col-md-12">
+        {{ Form::text('1c_id', trans('product::attributes.1c_id'), $errors, $product, ['required' => false]) }}
+    </div>
 </div>

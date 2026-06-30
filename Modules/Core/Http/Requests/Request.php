@@ -43,7 +43,19 @@ abstract class Request extends FormRequest
             return [];
         }
 
-        return array_map('mb_strtolower', array_dot($attributes));
+        $attributes = array_dot($attributes);
+
+        if (function_exists('supported_locales')) {
+            foreach (supported_locales() as $locale => $language) {
+                foreach ($attributes as $key => $value) {
+                    if (!str_contains($key, '*')) {
+                        $attributes["{$locale}.{$key}"] = $value;
+                    }
+                }
+            }
+        }
+
+        return $attributes;
     }
 
 
