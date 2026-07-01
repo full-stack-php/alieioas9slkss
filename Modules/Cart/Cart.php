@@ -914,6 +914,9 @@ class Cart extends DarryldecodeCart implements JsonSerializable
                 return $cartItem->isGift();
             })
             ->reject(function (CartItem $cartItem) {
+                return $this->cartItemIsBundle($cartItem);
+            })
+            ->reject(function (CartItem $cartItem) {
                 return $this->shouldExcludeSpecialProductsFromCustomerGroupDiscount()
                     && $this->cartItemHasSpecialPrice($cartItem);
             });
@@ -978,6 +981,25 @@ class Cart extends DarryldecodeCart implements JsonSerializable
             return true;
         }
 
+        if ($this->cartItemPackagingHasSpecialPrice($cartItem)) {
+            return true;
+        }
+
+        return $this->cartItemOptionHasSpecialPrice($cartItem);
+    }
+
+    private function formatCustomerGroupDiscountPercent(float $percent): string
+    {
+        return rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.');
+    }
+
+    private function cartItemIsBundle(CartItem $cartItem): bool
+    {
+        return ! empty($cartItem->attribute('bundle_id'));
+    }
+
+    private function cartItemPackagingHasSpecialPrice(CartItem $cartItem): bool
+    {
         $packaging = $cartItem->packaging ?? null;
 
         return is_object($packaging)
@@ -985,8 +1007,15 @@ class Cart extends DarryldecodeCart implements JsonSerializable
             && (float) $packaging->special_price > 0;
     }
 
-    private function formatCustomerGroupDiscountPercent(float $percent): string
+    private function cartItemOptionHasSpecialPrice(CartItem $cartItem): bool
     {
-        return rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.');
+        return collect($cartItem->options ?? [])
+            ->contains(function ($option) {
+                return collect($option->values ?? [])
+                    ->contains(function ($value) {
+                        return isset($value->special_price)
+                            && (float) $value->special_price > 0;
+                    });
+            });
     }
 }
