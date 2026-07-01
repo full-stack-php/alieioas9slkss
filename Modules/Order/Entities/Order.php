@@ -434,4 +434,23 @@ class Order extends Model
         return $this->childProductsGroupedByParent()->get($product->id, collect());
     }
 
+    public function hasCustomerGroupDiscount(): bool
+    {
+        return (float) ($this->attributes['customer_group_discount'] ?? 0) > 0;
+    }
+
+    public function getCustomerGroupDiscountAttribute($discount)
+    {
+        return Money::inDefaultCurrency($discount);
+    }
+
+    public function getCustomerGroupDiscountLabelAttribute(): string
+    {
+        $percent = (float) ($this->attributes['customer_group_discount_percent'] ?? 0);
+
+        $percent = rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.');
+
+        return "Скидка {$percent}%";
+    }
+
 }

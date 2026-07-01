@@ -114,6 +114,7 @@
             cartUrl: `{{ route('cart.index') }}`,
             customerEmail: '{{ auth()->user()->email ?? null }}',
             customerPhone: '{{ auth()->user()->phone ?? null }}',
+            customer_group_discount: @json(trans('storefront::checkout.customer_group_discount')),
             addresses: @json($addresses),
             defaultAddress: @json($defaultAddress),
             gateways: @json($gateways),

@@ -18,16 +18,6 @@
             </li>
         @endif
 
-        @foreach ($order->taxes as $tax)
-            <li>
-                <label>{{ $tax->name }}</label>
-
-                <span>
-                    {{ $tax->order_tax->amount->convert($order->currency, $order->currency_rate)->format($order->currency) }}
-                </span>
-            </li>
-        @endforeach
-
         @if ($order->hasCoupon())
             <li>
                 <label>
@@ -37,6 +27,16 @@
 
                 <span>
                     -{{ $order->discount->convert($order->currency, $order->currency_rate)->format($order->currency) }}
+                </span>
+            </li>
+        @endif
+
+        @if ($order->hasCustomerGroupDiscount())
+            <li>
+                <label>{{ $order->customer_group_discount_label }}</label>
+
+                <span>
+                    -{{ $order->customer_group_discount->convert($order->currency, $order->currency_rate)->format($order->currency) }}
                 </span>
             </li>
         @endif

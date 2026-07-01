@@ -22,6 +22,19 @@
                     </tr>
                 @endif
 
+                @if ($order->hasCustomerGroupDiscount())
+                    <tr>
+                        <td class="px-0 border-0">
+                            <p class="d-flex mb-0 align-items-center gap-1">
+                                {{ $order->customer_group_discount_label }} :
+                            </p>
+                        </td>
+                        <td class="text-end text-danger fw-medium px-0 border-0">
+                            -{{ $order->customer_group_discount->format() }}
+                        </td>
+                    </tr>
+                @endif
+
                 @if ($order->hasShippingMethod())
                     <tr>
                         <td class="px-0 border-0">

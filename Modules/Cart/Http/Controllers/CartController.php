@@ -32,6 +32,7 @@ class CartController
                 'formatted' => $cart->total()->format(),
             ],
             'sub_total' => $cart->subTotal()->format(),
+            'customer_group_discount' => $cart->customerGroupDiscountData(),
             'html' => view('storefront::public.layouts.sidebar_cart.sidebar_cart_items', compact('cart'))->render(),
         ]);
     }

@@ -73,4 +73,9 @@ class OrderStatus extends Model
             ->filter()
             ->toArray();
     }
+
+    public static function listStatuses()
+    {
+        return static::select('id')->get()->pluck('name', 'id');
+    }
 }

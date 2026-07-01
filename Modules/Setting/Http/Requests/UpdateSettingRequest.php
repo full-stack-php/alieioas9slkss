@@ -8,6 +8,7 @@ use Modules\Support\TimeZone;
 use Modules\Currency\Currency;
 use Illuminate\Validation\Rule;
 use Modules\Core\Http\Requests\Request;
+use Modules\User\Entities\Role;
 
 class UpdateSettingRequest extends Request
 {
@@ -41,6 +42,18 @@ class UpdateSettingRequest extends Request
             'customer_role' => ['required', Rule::exists('roles', 'id')],
             'supported_currencies.*' => ['required', Rule::in(Currency::codes())],
             'default_currency' => 'required|in_array:supported_currencies.*',
+
+            'customer_group_discounts' => ['nullable', 'array'],
+            'customer_group_discounts.*' => ['nullable', 'numeric', 'min:0', 'max:100'],
+
+            'customer_group_discount_display' => ['nullable', Rule::in(['show', 'hide', 'non_zero'])],
+            'customer_group_discount_exclude_special_products' => ['required', 'boolean'],
+
+            'customer_group_upgrade_thresholds' => ['nullable', 'array'],
+            'customer_group_upgrade_thresholds.*' => ['nullable', 'numeric', 'min:0'],
+
+            'customer_group_upgrade_order_statuses' => ['nullable', 'array'],
+            'customer_group_upgrade_order_statuses.*' => ['integer', Rule::exists('order_statuses', 'id')],
 
             'translatable.store_name' => 'required',
             'store_phone' => ['required'],
@@ -153,7 +166,15 @@ class UpdateSettingRequest extends Request
             'bank_transfer_enabled' => $this->has('bank_transfer_enabled') ? $this->get('bank_transfer_enabled') === 'on' : false,
             'check_payment_enabled' => $this->has('check_payment_enabled') ? $this->get('check_payment_enabled') === 'on' : false,
             'flat_rate_enabled' => $this->has('flat_rate_enabled') ? $this->get('flat_rate_enabled') === 'on' : false,
+
+            'customer_group_discount_exclude_special_products' => $this->has('customer_group_discount_exclude_special_products')
+                ? $this->get('customer_group_discount_exclude_special_products') === 'on'
+                : false,
+
+            'customer_group_discount_display' => $this->get('customer_group_discount_display', 'non_zero'),
         ]);
+
+        $this->merge($this->prepareCustomerGroupSettings());
     }
 
     /**
@@ -186,5 +207,58 @@ class UpdateSettingRequest extends Request
     private function mailEncryptionProtocols()
     {
         return array_keys(trans('setting::settings.form.mail_encryption_protocols'));
+    }
+
+    private function prepareCustomerGroupSettings(): array
+    {
+        $allowedRoleIds = Role::customerGroupList()
+            ->keys()
+            ->map(function ($roleId) {
+                return (int) $roleId;
+            });
+
+        $baseRoleId = (int) $this->input('customer_role');
+
+        if (! $allowedRoleIds->contains($baseRoleId)) {
+            $baseRoleId = (int) $allowedRoleIds->first();
+        }
+
+        $discounts = collect($this->input('customer_group_discounts', []))
+            ->filter(function ($percent, $roleId) use ($allowedRoleIds) {
+                return $allowedRoleIds->contains((int) $roleId);
+            })
+            ->map(function ($percent) {
+                return min(max((float) $percent, 0), 100);
+            })
+            ->toArray();
+
+        $thresholds = collect($this->input('customer_group_upgrade_thresholds', []))
+            ->filter(function ($amount, $roleId) use ($allowedRoleIds) {
+                return $allowedRoleIds->contains((int) $roleId);
+            })
+            ->map(function ($amount) {
+                return max((float) $amount, 0);
+            })
+            ->toArray();
+
+        if ($baseRoleId) {
+            $thresholds[$baseRoleId] = 0;
+        }
+
+        $statuses = collect($this->input('customer_group_upgrade_order_statuses', []))
+            ->filter()
+            ->map(function ($statusId) {
+                return (int) $statusId;
+            })
+            ->unique()
+            ->values()
+            ->toArray();
+
+        return [
+            'customer_role' => $baseRoleId,
+            'customer_group_discounts' => $discounts,
+            'customer_group_upgrade_thresholds' => $thresholds,
+            'customer_group_upgrade_order_statuses' => $statuses,
+        ];
     }
 }

@@ -72,4 +72,27 @@ class Role extends EloquentRole
     {
         return new AdminTable($this->newQuery());
     }
+
+    public static function customerGroupList()
+    {
+        return static::query()
+            ->select(['id', 'permissions'])
+            ->get()
+            ->reject(function ($role) {
+                if (strcasecmp($role->name, 'Admin') === 0) {
+                    return true;
+                }
+
+                $permissions = (array) $role->permissions;
+
+                foreach (array_keys($permissions) as $permission) {
+                    if (strpos($permission, 'admin.') === 0) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })
+            ->pluck('name', 'id');
+    }
 }

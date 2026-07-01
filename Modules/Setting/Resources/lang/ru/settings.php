@@ -91,6 +91,19 @@ return [
         'enable_cod' => 'Включить Cash On Delivery',
         'enable_bank_transfer' => 'Включить Bank Transfer',
         'enable_check_payment' => 'Включить Check / Money Order',
+        'customer_group' => 'Группа покупателей',
+        'discount_percent' => 'Скидка, %',
+        'exclude_special_products_from_customer_group_discount' => 'Не применять групповую скидку к акционным товарам',
+
+        'customer_group_discount_display_options' => [
+            'non_zero' => 'Показывать только если скидка больше 0%',
+            'show' => 'Показывать всегда',
+            'hide' => 'Скрывать всегда',
+        ],
+        'orders_total_for_upgrade' => 'Сумма заказов для автоперехода',
+        'default_customer_group' => 'Базовая',
+        'customer_group_upgrade_order_statuses_help' => 'В сумму автоперехода будут попадать только заказы в выбранных статусах.',
+        'customer_group_upgrade_thresholds_help' => 'Когда сумма заказов покупателя в выбранных статусах достигнет указанного значения, покупатель автоматически перейдёт в соответствующую группу.',
     ],
     'validation' => [
         'sqlite_is_not_installed' => 'SQLite is not installed',

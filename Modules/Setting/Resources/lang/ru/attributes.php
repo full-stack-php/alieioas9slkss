@@ -4,10 +4,17 @@ return [
     'supported_countries' => 'Supported Countries',
     'default_country' => 'Default Country',
     'default_timezone' => 'Default Timezone',
-    'customer_role' => 'Группа покупателей',
     'reviews_enabled' => 'Reviews & Ratings',
     'auto_approve_reviews' => 'Auto Approve Reviews',
     'cookie_bar_enabled' => 'Cookie Bar',
+
+    'customer_group_discount_display' => 'Отображение групповой скидки',
+    'customer_group_discount_exclude_special_products' => 'Исключать акционные товары из групповой скидки',
+
+    'customer_role' => 'Базовая группа покупателей',
+    'customer_group_discounts' => 'Скидки и автопереходы по группам покупателей',
+    'customer_group_upgrade_order_statuses' => 'Статусы заказов для расчёта суммы автоперехода',
+    'customer_group_upgrade_thresholds' => 'Пороги перехода по сумме заказов',
 
     'maintenance_mode' => 'Maintenance Mode',
 

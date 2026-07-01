@@ -59,12 +59,21 @@ class SettingTabs extends Tabs
             $tab->active();
             $tab->weight(5);
 
-            $tab->fields(['supported_countries.*', 'default_country', 'default_timezone', 'customer_role']);
+            $tab->fields([
+                'supported_countries.*',
+                'default_country',
+                'default_timezone',
+                'customer_role',
+                'customer_group_discounts.*',
+                'customer_group_discount_display',
+                'customer_group_discount_exclude_special_products',
+            ]);
 
             $tab->view('setting::admin.settings.tabs.general', [
                 'countries' => Country::all(),
                 'timeZones' => TimeZone::all(),
-                'roles' => Role::list(),
+                'roles' => Role::customerGroupList(),
+                'orderStatuses' => OrderStatus::listStatuses(),
             ]);
         });
     }

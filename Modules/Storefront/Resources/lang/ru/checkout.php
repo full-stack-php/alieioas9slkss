@@ -32,6 +32,8 @@ return [
     "remember_about_your_order" => "Запомнить ваш заказ",
     'login' => 'Я зарегистрирован',
     'register' => 'Регистрация',
+    'customer_group_discount' => 'Скидка',
+    'customer_group_discount_label' => 'Скидка :percent%',
     'must_agree_to_terms' => 'Вы должны прочесть и согласиться с Условия оформления заказа!',
     "table" => [
         'customer_first_name' =>'Имя',

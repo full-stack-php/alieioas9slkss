@@ -440,6 +440,31 @@
                     `;
                 }
 
+                if (
+                    data.customer_group_discount
+                    && data.customer_group_discount.show
+                ) {
+                    var groupDiscountValue = data.customer_group_discount.value
+                    && data.customer_group_discount.value.formatted
+                        ? data.customer_group_discount.value.formatted
+                        : '';
+
+                    var groupDiscountLabel = data.customer_group_discount.label
+                        || self.options.messages.customer_group_discount
+                        || 'Discount';
+
+                    html += `
+                        <tr>
+                            <td class="text-left total-title text-success">
+                                ${self.escapeHtml(groupDiscountLabel)}:
+                            </td>
+                            <td class="text-right total-text text-success">
+                                -${groupDiscountValue}
+                            </td>
+                        </tr>
+                    `;
+                }
+
                 var hasShippingMethods = data.availableShippingMethods
                     && Object.keys(data.availableShippingMethods).length > 0;
 

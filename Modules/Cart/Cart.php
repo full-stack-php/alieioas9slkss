@@ -385,6 +385,8 @@ class Cart extends DarryldecodeCart implements JsonSerializable
             'name' => $packaging->name,
             'qty' => (int) $packaging->qty,
             'price_per_unit' => $packaging->price,
+            'special_price' => $packaging->special_price,
+            'special_price_type' => $packaging->special_price_type,
         ];
     }
 
@@ -542,7 +544,8 @@ class Cart extends DarryldecodeCart implements JsonSerializable
     {
         return $this->subTotal()
             ->add($this->shippingCost())
-            ->subtract($this->coupon()->value());
+            ->subtract($this->coupon()->value())
+            ->subtract($this->customerGroupDiscount());
     }
 
     public function clear(): void
@@ -580,6 +583,7 @@ class Cart extends DarryldecodeCart implements JsonSerializable
             'shippingLabel' => $freeShipping->shippingLabel(),
             'free_shipping' => $freeShipping->summary(),
             'coupon' => $this->coupon(),
+            'customer_group_discount' => $this->customerGroupDiscountData(),
             'total' => $this->total(),
         ];
     }
@@ -858,5 +862,131 @@ class Cart extends DarryldecodeCart implements JsonSerializable
     public function removeCoupon()
     {
         $this->removeConditionsByType('coupon');
+    }
+
+    public function customerGroupDiscount()
+    {
+        $percent = $this->customerGroupDiscountPercent();
+
+        if ($percent <= 0) {
+            return Money::inDefaultCurrency(0);
+        }
+
+        $amount = $this->customerGroupDiscountBase()->amount() * ($percent / 100);
+
+        return Money::inDefaultCurrency($amount)->round();
+    }
+
+    public function customerGroupDiscountPercent(): float
+    {
+        if (! auth()->check()) {
+            return 0;
+        }
+
+        $discounts = setting('customer_group_discounts', []);
+
+        if (empty($discounts)) {
+            return 0;
+        }
+
+        $roleIds = auth()->user()
+            ->roles()
+            ->pluck('roles.id')
+            ->map(function ($roleId) {
+                return (int) $roleId;
+            });
+
+        if ($roleIds->isEmpty()) {
+            return 0;
+        }
+
+        return $roleIds
+            ->map(function ($roleId) use ($discounts) {
+                return (float) ($discounts[$roleId] ?? 0);
+            })
+            ->max() ?: 0;
+    }
+
+    public function customerGroupDiscountBase()
+    {
+        $items = $this->items()
+            ->reject(function (CartItem $cartItem) {
+                return $cartItem->isGift();
+            })
+            ->reject(function (CartItem $cartItem) {
+                return $this->shouldExcludeSpecialProductsFromCustomerGroupDiscount()
+                    && $this->cartItemHasSpecialPrice($cartItem);
+            });
+
+        return Money::inDefaultCurrency(
+            $items->sum(function (CartItem $cartItem) {
+                return $cartItem->totalPrice()->amount();
+            })
+        );
+    }
+
+    public function customerGroupDiscountData(): array
+    {
+        return [
+            'percent' => $this->customerGroupDiscountPercent(),
+            'label' => $this->customerGroupDiscountLabel(),
+            'value' => $this->customerGroupDiscount(),
+            'show' => $this->shouldShowCustomerGroupDiscount(),
+        ];
+    }
+
+    public function customerGroupDiscountLabel(): string
+    {
+        return trans('storefront::checkout.customer_group_discount_label', [
+            'percent' => $this->formatCustomerGroupDiscountPercent($this->customerGroupDiscountPercent()),
+        ]);
+    }
+
+    public function shouldShowCustomerGroupDiscount(): bool
+    {
+        $mode = setting('customer_group_discount_display', 'non_zero');
+
+        if (!in_array($mode, ['show', 'hide', 'non_zero'], true)) {
+            $mode = 'non_zero';
+        }
+
+        if ($mode === 'hide') {
+            return false;
+        }
+
+        if ($mode === 'show') {
+            return true;
+        }
+
+        return $this->customerGroupDiscount()->amount() > 0;
+    }
+
+    private function shouldExcludeSpecialProductsFromCustomerGroupDiscount(): bool
+    {
+        return (bool) setting('customer_group_discount_exclude_special_products', false);
+    }
+
+    private function cartItemHasSpecialPrice(CartItem $cartItem): bool
+    {
+        $cartItem->refreshStock();
+
+        if (
+            is_object($cartItem->item)
+            && method_exists($cartItem->item, 'hasSpecialPrice')
+            && $cartItem->item->hasSpecialPrice()
+        ) {
+            return true;
+        }
+
+        $packaging = $cartItem->packaging ?? null;
+
+        return is_object($packaging)
+            && isset($packaging->special_price)
+            && (float) $packaging->special_price > 0;
+    }
+
+    private function formatCustomerGroupDiscountPercent(float $percent): string
+    {
+        return rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.');
     }
 }

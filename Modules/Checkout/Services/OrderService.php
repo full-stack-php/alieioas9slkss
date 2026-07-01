@@ -10,6 +10,7 @@ use Modules\Currency\Entities\CurrencyRate;
 use Modules\Account\Entities\DefaultAddress;
 use Modules\Order\Entities\OrderStatus;
 use Modules\Shipping\Facades\ShippingMethod;
+use Modules\Support\Money;
 
 class OrderService
 {
@@ -190,6 +191,8 @@ class OrderService
             'shipping_cost' => Cart::shippingCost()->amount(),
             'coupon_id' => Cart::coupon()->id(),
             'discount' => Cart::discount()->amount(),
+            'customer_group_discount' => Cart::customerGroupDiscount()->amount(),
+            'customer_group_discount_percent' => Cart::customerGroupDiscountPercent(),
             'total' => Cart::total()->amount(),
             'payment_method' => $request->payment_method,
             'currency' => currency(),
@@ -263,5 +266,26 @@ class OrderService
             'nova_poshta_postomat' => self::NP_ADDRESS_POSTOMAT,
             default => null,
         };
+    }
+
+    public function hasCustomerGroupDiscount(): bool
+    {
+        return (float) ($this->attributes['customer_group_discount'] ?? 0) > 0;
+    }
+
+    public function getCustomerGroupDiscountAttribute($discount)
+    {
+        return Money::inDefaultCurrency($discount);
+    }
+
+    public function getCustomerGroupDiscountLabelAttribute(): string
+    {
+        $percent = (float) ($this->attributes['customer_group_discount_percent'] ?? 0);
+
+        $percent = rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.');
+
+        return trans('storefront::checkout.customer_group_discount_label', [
+            'percent' => $percent,
+        ]);
     }
 }

@@ -173,6 +173,17 @@
                                         </tr>
                                     @endif
 
+                                    @if($cart->shouldShowCustomerGroupDiscount())
+                                        <tr id="customer_group_discount_row">
+                                            <td class="text-left total-title">
+                                                {{ $cart->customerGroupDiscountLabel() }}:
+                                            </td>
+                                            <td id="customer_group_discount_value" class="text-right total-text">
+                                                -{{ $cart->customerGroupDiscount()->format() }}
+                                            </td>
+                                        </tr>
+                                    @endif
+
                                     <tr>
                                         <td class="text-left total-title total-last">{{ trans('storefront::checkout.total') }}:</td>
                                         <td id="checkout_total" class="text-right total-text">{{ $cart->total()->format() }}</td>

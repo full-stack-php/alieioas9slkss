@@ -19,9 +19,7 @@ class CustomerService
     public function register($request)
     {
         return tap($this->auth->registerAndActivate($this->getCustomerData($request)), function ($user) {
-            $role = Role::find(setting('customer_role'));
-
-            $user->roles()->attach($role);
+            $user->assignDefaultCustomerGroup();
         });
     }
 

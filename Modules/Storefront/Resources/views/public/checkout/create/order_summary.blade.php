@@ -70,6 +70,17 @@
                 </tr>
             @endif
 
+            @if(Cart::shouldShowCustomerGroupDiscount())
+                <tr>
+                    <td class="text-left total-title text-success">
+                        {{ Cart::customerGroupDiscountLabel() }}:
+                    </td>
+                    <td class="text-right total-text text-success">
+                        -{{ Cart::customerGroupDiscount()->format() }}
+                    </td>
+                </tr>
+            @endif
+
             @if($hasShippingMethods)
                 <tr>
                     <td class="text-left total-title">

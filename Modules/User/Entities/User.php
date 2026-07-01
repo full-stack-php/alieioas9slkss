@@ -3,6 +3,7 @@
 namespace Modules\User\Entities;
 
 use Modules\Order\Entities\Order;
+use Modules\User\Entities\Role;
 use Modules\User\Admin\UserTable;
 use Illuminate\Http\JsonResponse;
 use Modules\Review\Entities\QuestionAnswer;
@@ -275,5 +276,112 @@ class User extends EloquentUser implements AuthenticatableContract
     public function table()
     {
         return new UserTable($this->newQuery());
+    }
+
+    public function assignDefaultCustomerGroup(): void
+    {
+        $roleId = (int) setting('customer_role');
+
+        if ($roleId <= 0) {
+            return;
+        }
+
+        if (! Role::customerGroupList()->keys()->contains($roleId)) {
+            return;
+        }
+
+        $this->roles()->syncWithoutDetaching([$roleId]);
+    }
+
+    public function customerGroupUpgradeOrdersTotal(): float
+    {
+        $statuses = array_filter((array) setting('customer_group_upgrade_order_statuses', []));
+
+        if (empty($statuses)) {
+            return 0;
+        }
+
+        return (float) Order::query()
+            ->where('customer_id', $this->id)
+            ->whereIn('status_id', $statuses)
+            ->sum('total');
+    }
+
+    public function syncCustomerGroupByOrdersTotal(bool $allowDowngrade = false): void
+    {
+        $baseRoleId = (int) setting('customer_role');
+
+        $thresholds = collect(setting('customer_group_upgrade_thresholds', []))
+            ->mapWithKeys(function ($amount, $roleId) {
+                return [(int) $roleId => (float) $amount];
+            })
+            ->filter(function ($amount, $roleId) {
+                return $roleId > 0 && $amount >= 0;
+            });
+
+        if ($baseRoleId > 0 && ! $thresholds->has($baseRoleId)) {
+            $thresholds->put($baseRoleId, 0);
+        }
+
+        if ($thresholds->isEmpty()) {
+            return;
+        }
+
+        $ordersTotal = $this->customerGroupUpgradeOrdersTotal();
+
+        $targetRoleId = $thresholds
+            ->filter(function ($amount) use ($ordersTotal) {
+                return $ordersTotal >= $amount;
+            })
+            ->sortDesc()
+            ->keys()
+            ->first();
+
+        if (! $targetRoleId) {
+            return;
+        }
+
+        $currentRoleIds = $this->roles()
+            ->pluck('roles.id')
+            ->map(function ($roleId) {
+                return (int) $roleId;
+            });
+
+        $currentThreshold = $currentRoleIds
+            ->map(function ($roleId) use ($thresholds) {
+                return (float) ($thresholds[$roleId] ?? 0);
+            })
+            ->max() ?: 0;
+
+        $targetThreshold = (float) ($thresholds[$targetRoleId] ?? 0);
+
+        if (! $allowDowngrade && $targetThreshold < $currentThreshold) {
+            return;
+        }
+
+        $automaticRoleIds = $thresholds
+            ->keys()
+            ->map(function ($roleId) {
+                return (int) $roleId;
+            })
+            ->unique();
+
+        $rolesToKeep = array_filter([
+            $baseRoleId,
+            (int) $targetRoleId,
+        ]);
+
+        $rolesToDetach = $automaticRoleIds
+            ->reject(function ($roleId) use ($rolesToKeep) {
+                return in_array((int) $roleId, $rolesToKeep, true);
+            })
+            ->values()
+            ->toArray();
+
+        if (! empty($rolesToDetach)) {
+            $this->roles()->detach($rolesToDetach);
+        }
+
+        $this->roles()->syncWithoutDetaching($rolesToKeep);
     }
 }
