@@ -63,18 +63,106 @@ window.sl_cart_plus = function(elem) {
     $input.val(count).change();
 };
 
+function getCartItemFromResponse(data, key) {
+    if (!data || !data.items) {
+        return null;
+    }
+
+    if (data.items[key]) {
+        return data.items[key];
+    }
+
+    if (Array.isArray(data.items)) {
+        return data.items.find(function (item) {
+            return item.id === key;
+        }) || null;
+    }
+
+    return Object.values(data.items).find(function (item) {
+        return item.id === key;
+    }) || null;
+}
+
+function renderCartPriceHtml(currentPrice, regularPrice, hasDiscountedPrice) {
+    var current = currentPrice && currentPrice.formatted ? currentPrice.formatted : '';
+    var regular = regularPrice && regularPrice.formatted ? regularPrice.formatted : '';
+
+    if (hasDiscountedPrice && regular) {
+        return '<span class="price-old">' + regular + '</span> <span class="price-new">' + current + '</span>';
+    }
+
+    return '<span class="price-new">' + current + '</span>';
+}
+
+function updateCartItemRow(key, cartItem) {
+    if (!cartItem) {
+        return;
+    }
+
+    var $row = $('[data-cart-item]').filter(function () {
+        return String($(this).attr('data-cart-item')) === String(key);
+    });
+
+    if (!$row.length) {
+        return;
+    }
+
+    $row.find('[data-cart-unit-price-html]').html(
+        renderCartPriceHtml(
+            cartItem.unitPrice,
+            cartItem.regularUnitPrice,
+            cartItem.has_discounted_price === true
+        )
+    );
+
+    var lineTotal = cartItem.total && cartItem.total.formatted
+        ? cartItem.total.formatted
+        : '';
+
+    $row.find('[data-cart-line-total-html]').html(
+        '<span class="text-cart-item-total">' + window.cartTotalLabel + '</span>' + lineTotal
+    );
+
+    if (typeof cartItem.qty !== 'undefined') {
+        $row.find('input.form-control').val(cartItem.qty);
+    }
+}
+
+function updateCartSummary(data) {
+    $('.cart-total').text(data.quantity || 0);
+
+    if (data.total && data.total.formatted) {
+        $('#checkout_total').html(data.total.formatted);
+    }
+
+    if (data.subTotal && data.subTotal.formatted) {
+        $('#checkout_sub_total').html(data.subTotal.formatted);
+    }
+
+    if (data.customer_group_discount) {
+        if (data.customer_group_discount.show) {
+            $('#customer_group_discount_row').show();
+
+            if (data.customer_group_discount.value && data.customer_group_discount.value.formatted) {
+                $('#customer_group_discount_value').html('-' + data.customer_group_discount.value.formatted);
+            }
+        } else {
+            $('#customer_group_discount_row').hide();
+        }
+    }
+}
+
 window.updateQuantityCart = function(key, quantity) {
     $.ajax({
         url: `/cart/items/${key}`,
         type: 'put',
-        data: { qty:  (typeof (quantity) != 'undefined' ? quantity : 1) },
+        data: {
+            qty: typeof quantity !== 'undefined' ? quantity : 1
+        },
         dataType: 'json',
         success: function (json) {
-            $.get(window.Korf.data.routes.cart_get, (res) => {
-                $('.cart-total').text(res.quantity);
-                $("#checkout_total").html(res.total.formatted);
-                $("#checkout_sub_total").html(res.sub_total);
-            });
+            updateCartItemRow(key, getCartItemFromResponse(json, key));
+            updateCartSummary(json);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);

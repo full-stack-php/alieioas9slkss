@@ -116,10 +116,51 @@
                         return;
                     }
 
-                    self.renderCart(data);
+                    self.updateExistingCartRows(data);
                     self.renderShippingMethods(data);
                     self.renderTotals(data);
                     self.refreshSelectedShippingMethod(data);
+                });
+            };
+
+            self.updateCartRow = function ($row, cartItem) {
+                var qty = parseInt(cartItem.qty) || 1;
+                var unitPrice = cartItem.unitPrice?.formatted || '';
+                var total = cartItem.total?.formatted || '';
+
+                var hasDiscountedPrice = cartItem.has_discounted_price === true;
+                var regularUnitPrice = cartItem.regularUnitPrice?.formatted || '';
+
+                var unitPriceHtml = hasDiscountedPrice
+                    ? `<span class="price-old">${regularUnitPrice}</span> <span class="price-new">${unitPrice}</span>`
+                    : `<span class="price-new">${unitPrice}</span>`;
+
+                $row.find('.opc-cart-qty-input').val(qty);
+
+                $row.find('[data-cart-unit-price-html]').html(unitPriceHtml);
+
+                $row.find('[data-cart-line-total-html]').html(
+                    `<span class="text-cart-item-total">${self.options.messages.total || 'Всего'}</span>${total}`
+                );
+            };
+
+            self.updateExistingCartRows = function (data) {
+                if (!data.items) {
+                    return;
+                }
+
+                $.each(data.items, function (key, cartItem) {
+                    var itemKey = cartItem.id || key;
+
+                    var $row = $('[data-cart-item]').filter(function () {
+                        return String($(this).attr('data-cart-item')) === String(itemKey);
+                    });
+
+                    if (!$row.length) {
+                        return;
+                    }
+
+                    self.updateCartRow($row, cartItem);
                 });
             };
 
@@ -175,6 +216,14 @@
 
                 var unitPrice = cartItem.unitPrice?.formatted || '';
                 var total = cartItem.total?.formatted || '';
+
+                var hasDiscountedPrice = cartItem.has_discounted_price === true;
+                var regularUnitPrice = cartItem.regularUnitPrice?.formatted || '';
+                var regularTotal = cartItem.regularTotal?.formatted || '';
+
+                var unitPriceHtml = hasDiscountedPrice
+                    ? `<span class="price-old">${regularUnitPrice}</span> <span class="price-new">${unitPrice}</span>`
+                    : `<span class="price-new">${unitPrice}</span>`;
 
                 var minusQty = qty - minQty;
                 if (minusQty < minQty) {
@@ -257,7 +306,7 @@
                 <div class="cart-totals d-flex">
                     <div class="cart-item-price">
                         <span class="text-cart-item-price">${self.options.messages.price || 'Цена'}</span>
-                        ${unitPrice}
+                        ${unitPriceHtml}
                     </div>
 
                     <div class="cart-item-total">

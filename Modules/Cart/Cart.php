@@ -353,6 +353,8 @@ class Cart extends DarryldecodeCart implements JsonSerializable
             'manage_stock' => $product->manage_stock,
             'qty' => $product->qty,
             'in_stock' => $product->in_stock,
+            'price' => $product->price->amount(),
+            'selling_price' => $product->selling_price->amount(),
             'is_gift' => $isGift,
         ];
     }
@@ -650,6 +652,7 @@ class Cart extends DarryldecodeCart implements JsonSerializable
                 'options' => collect(),
                 'bundle_id' => $bundleGroupId,
                 'is_bundle_leader' => true,
+                'regular_price' => (float) $bundle->product_price,
                 'created_at' => time(),
             ],
         ]);
@@ -665,6 +668,7 @@ class Cart extends DarryldecodeCart implements JsonSerializable
                 'bundle_id' => $bundleGroupId,
                 'is_bundle_follower' => true,
                 'parent_id' => "{$bundleGroupId}_main",
+                'regular_price' => (float) $bundle->bundle_price,
                 'created_at' => time() + 1,
             ],
         ]);

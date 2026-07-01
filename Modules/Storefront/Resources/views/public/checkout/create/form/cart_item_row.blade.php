@@ -5,7 +5,7 @@
     $parentCartItem = $parentCartItem ?? null;
 @endphp
 
-<div class="cart-item d-flex {{ $isGift ? 'cart-item--gift' : '' }} {{ $isChild ? 'cart-item--child' : '' }}">
+<div class="cart-item d-flex {{ $isGift ? 'cart-item--gift' : '' }} {{ $isChild ? 'cart-item--child' : '' }}" data-cart-item="{{ $cartItem->id }}">
     <div class="cart-item-left">
         <a href="{{ $cartItem->product->slug ? route('products.show', $cartItem->product->slug) : '#' }}">
             @if ($cartItem->product->base_image->path ?? false)
@@ -135,18 +135,27 @@
 
         <div class="cart-totals d-flex">
             <div class="cart-item-price">
-                <span class="text-cart-item-price">
-                    {{ trans('storefront::cart.table.unit_price') ?? 'Цена:' }}
-                </span>
-                {{ $cartItem->unitPrice()->format() }}
+        <span class="text-cart-item-price">
+            {{ trans('storefront::cart.table.unit_price') ?? 'Цена:' }}
+        </span>
+
+                <span class="d-flex justify-content-center align-baseline gap-2" data-cart-unit-price-html>
+            @if($cartItem->hasDiscountedPrice())
+                        <span class="price-old">{{ $cartItem->regularUnitPrice()->format() }}</span>
+                        <span class="price-new">{{ $cartItem->unitPrice()->format() }}</span>
+                    @else
+                        <span class="price-new">{{ $cartItem->unitPrice()->format() }}</span>
+                    @endif
+        </span>
             </div>
 
-            <div class="cart-item-total">
-                <span class="text-cart-item-total">
-                    {{ trans('storefront::cart.table.line_total') ?? 'Итого:' }}
-                </span>
+            <div class="cart-item-total" data-cart-line-total-html>
+        <span class="text-cart-item-total">
+            {{ trans('storefront::cart.table.line_total') ?? 'Итого:' }}
+        </span>
                 {{ $cartItem->totalPrice()->format() }}
             </div>
         </div>
+
     </div>
 </div>

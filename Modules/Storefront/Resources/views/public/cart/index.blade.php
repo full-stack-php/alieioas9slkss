@@ -54,7 +54,7 @@
                                     $packaging = $cartItem->packaging->id ?? null;
                                 @endphp
 
-                                <div class="cart-item d-flex">
+                                <div class="cart-item d-flex" data-cart-item="{{ $cartItem->id }}">
 
                                     <div class="cart-item-left">
                                         <a href="{{ route('products.show', $cartItem->product->slug) }}">
@@ -132,12 +132,23 @@
 
                                         <div class="cart-totals d-flex">
                                             <div class="cart-item-price">
-                                                <span class="text-cart-item-price">{{ trans('storefront::cart.table.unit_price') }}</span>{{ $cartItem->unitPrice()->format() }}
+                                                <span class="text-cart-item-price">{{ trans('storefront::cart.table.unit_price') }}</span>
+
+                                                <span class="d-flex justify-content-center align-baseline gap-2" data-cart-unit-price-html>
+                                                    @if($cartItem->hasDiscountedPrice())
+                                                        <span class="price-old">{{ $cartItem->regularUnitPrice()->format() }}</span>
+                                                        <span class="price-new">{{ $cartItem->unitPrice()->format() }}</span>
+                                                    @else
+                                                        <span class="price-new">{{ $cartItem->unitPrice()->format() }}</span>
+                                                    @endif
+                                                </span>
                                             </div>
-                                            <div class="cart-item-total">
+
+                                            <div class="cart-item-total" data-cart-line-total-html>
                                                 <span class="text-cart-item-total">{{ trans('storefront::cart.total') }}</span>{{ $cartItem->totalPrice()->format() }}
                                             </div>
                                         </div>
+
                                     </div>
                                 </div>
                             @endforeach
@@ -206,6 +217,10 @@
     </section>
 @endsection
 @push('scripts')
+    <script>
+        window.cartTotalLabel = @json(trans('storefront::cart.total'));
+    </script>
+
     @vite([
        'Modules/Storefront/Resources/assets/public/js/checkout_cart.js',
     ])

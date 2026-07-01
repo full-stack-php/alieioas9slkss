@@ -49,6 +49,9 @@ class CartItem implements JsonSerializable
             'packaging' => !empty($this->packaging) ? $this->packaging : new stdClass(),
             'is_gift_packaging' => $this->isGiftPackaging,
             'exclude_from_coupon' => $this->excludeFromCoupon,
+            'has_discounted_price' => $this->hasDiscountedPrice(),
+            'regularUnitPrice' => $this->regularUnitPrice(),
+            'regularTotal' => $this->regularTotalPrice(),
             'unitPrice' => $this->unitPrice(),
             'total' => $this->totalPrice(),
         ];
@@ -62,6 +65,105 @@ class CartItem implements JsonSerializable
     public function totalPrice()
     {
         return $this->unitPrice()->multiply($this->qty);
+    }
+
+    public function regularUnitPrice()
+    {
+        return Money::inDefaultCurrency($this->regularUnitPriceAmount());
+    }
+
+    public function regularTotalPrice()
+    {
+        return $this->regularUnitPrice()->multiply($this->qty);
+    }
+
+    public function hasDiscountedPrice(): bool
+    {
+        if ($this->isGift()) {
+            return false;
+        }
+
+        return $this->regularUnitPrice()->amount() > $this->unitPrice()->amount();
+    }
+
+    private function regularUnitPriceAmount(): float
+    {
+        if ($this->hasPackaging()) {
+            return $this->regularPackagingUnitPriceAmount();
+        }
+
+        if ($this->attribute('regular_price') !== null) {
+            return $this->amount($this->attribute('regular_price'), (float) $this->price);
+        }
+
+        return $this->regularProductPriceWithOptions();
+    }
+
+    private function regularPackagingUnitPriceAmount(): float
+    {
+        $pricePerUnit = $this->amount($this->packaging->price_per_unit ?? null, 0);
+        $qty = max(1, (int) ($this->packaging->qty ?? 1));
+
+        return $pricePerUnit * $qty;
+    }
+
+    private function regularProductPriceWithOptions(): float
+    {
+        $finalPrice = $this->productRegularPriceAmount();
+
+        foreach (collect($this->options ?? []) as $option) {
+            foreach (collect($option->values ?? []) as $value) {
+                $normalAmount = $this->amount($value->price ?? null, 0);
+
+                if (($value->price_type ?? null) === 'fixed' && $normalAmount > 0) {
+                    $finalPrice = $normalAmount;
+
+                    break 2;
+                }
+            }
+        }
+
+        foreach (collect($this->options ?? []) as $option) {
+            foreach (collect($option->values ?? []) as $value) {
+                $normalPercent = $this->amount($value->price ?? null, 0);
+
+                if (($value->price_type ?? null) === 'percent' && $normalPercent > 0) {
+                    $finalPrice = ($finalPrice * $normalPercent) / 100;
+                }
+            }
+        }
+
+        return $finalPrice;
+    }
+
+    private function productRegularPriceAmount(): float
+    {
+        $price = data_get($this->product, 'price');
+
+        if ($price === null) {
+            $this->refreshStock();
+
+            $price = data_get($this->item, 'price');
+        }
+
+        return $this->amount($price, (float) $this->price);
+    }
+
+    private function amount($value, float $default = 0): float
+    {
+        if (is_object($value) && method_exists($value, 'amount')) {
+            return (float) $value->amount();
+        }
+
+        if (is_array($value)) {
+            return (float) ($value['amount'] ?? $default);
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        return $default;
     }
 
     public function optionsPrice()
