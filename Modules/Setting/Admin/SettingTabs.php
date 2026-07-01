@@ -65,6 +65,8 @@ class SettingTabs extends Tabs
                 'default_timezone',
                 'customer_role',
                 'customer_group_discounts.*',
+                'customer_group_upgrade_thresholds.*',
+                'customer_group_upgrade_order_statuses.*',
                 'customer_group_discount_display',
                 'customer_group_discount_exclude_special_products',
             ]);

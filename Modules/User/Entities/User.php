@@ -303,7 +303,7 @@ class User extends EloquentUser implements AuthenticatableContract
 
         return (float) Order::query()
             ->where('customer_id', $this->id)
-            ->whereIn('status_id', $statuses)
+            ->whereIn('status', $statuses)
             ->sum('total');
     }
 

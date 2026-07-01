@@ -450,7 +450,9 @@ class Order extends Model
 
         $percent = rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.');
 
-        return "Скидка {$percent}%";
+        return trans('storefront::checkout.customer_group_discount_label', [
+            'percent' => $percent,
+        ]);
     }
 
 }

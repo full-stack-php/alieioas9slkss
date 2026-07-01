@@ -6,10 +6,13 @@ use Illuminate\Http\Response;
 use Modules\Order\Entities\Order;
 use Modules\Order\Entities\OrderStatus;
 use Modules\Admin\Traits\HasCrudActions;
+use Modules\Order\Events\OrderStatusChanged;
 
 class OrderController
 {
-    use HasCrudActions;
+    use HasCrudActions {
+        update as performCrudUpdate;
+    }
 
     protected $model = Order::class;
 
@@ -36,5 +39,21 @@ class OrderController
             'order' => $order,
             'orderStatuses' => OrderStatus::list(),
         ]);
+    }
+
+    public function update($id)
+    {
+        $order = $this->getEntity($id);
+        $oldStatus = $order->status;
+
+        $response = $this->performCrudUpdate($id);
+
+        $order->refresh();
+
+        if ((string) $oldStatus !== (string) $order->status) {
+            event(new OrderStatusChanged($order));
+        }
+
+        return $response;
     }
 }

@@ -21,6 +21,6 @@ class UpdateCustomerGroupByOrdersTotal
             return;
         }
 
-        $customer->syncCustomerGroupByOrdersTotal();
+        $customer->syncCustomerGroupByOrdersTotal(true);
     }
 }
