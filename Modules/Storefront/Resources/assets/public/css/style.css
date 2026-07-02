@@ -7631,17 +7631,7 @@ footer .gmap iframe {
     color: #000;
     text-align: left;
 }
-.view-box-rs {
-    background: var(--color-white);
-    padding: 6px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    margin-top: 10px;
-}
 .view-box {
-    background: var(--color-white);
-    padding: 6px;
-    border-radius: 8px;
     margin-bottom: 20px;
     clear: both;
 }
@@ -7660,6 +7650,11 @@ footer .gmap iframe {
 }
 .view-box.transparent {
     background: transparent;
+}
+.box-wrap{
+    background: var(--color-white);
+    padding: 6px;
+    border-radius: 8px;
 }
 .btn-view {
     background: transparent;

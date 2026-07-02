@@ -1,4 +1,20 @@
 <aside class="oc-filter-box" id="product-filter">
+
+    <div class="ocf-mobile-header">
+        <span class="ocf-mobile-title">
+            Фильтр
+        </span>
+
+        <button
+            type="button"
+            class="ocf-mobile-close"
+            data-ocf-mobile-close
+            aria-label="Закрыть фильтр"
+        >
+            ×
+        </button>
+    </div>
+
     <form
         id="product-filter-form"
         action="{{ url()->current() }}"
@@ -142,7 +158,7 @@
         @endif
 
         <div class="filter-actions mt-3">
-            <button type="submit" class="btn btn-primary w-100">
+            <button type="submit" class="btn btn-primary w-100 ocf-search-btn-static">
                 Показать
             </button>
 

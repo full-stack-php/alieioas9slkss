@@ -18,6 +18,53 @@ document.addEventListener('DOMContentLoaded', () => {
     let priceSliderChanging = false;
     let lastPopoverTarget = null;
 
+    const mobileMedia = window.matchMedia('(max-width: 767px)');
+    let mobileStartX = 0;
+    let mobileStartY = 0;
+
+    const isMobileFilter = () => mobileMedia.matches;
+
+    const openMobileFilter = () => {
+        filterBox.classList.add('ocf-mobile-active');
+        document.body.classList.add('ocf-overflow-hidden');
+    };
+
+    const closeMobileFilter = () => {
+        filterBox.classList.remove('ocf-mobile-active');
+        document.body.classList.remove('ocf-overflow-hidden');
+        hidePopover();
+    };
+
+    const updateStaticButton = (count) => {
+        const button = filterBox.querySelector('.ocf-search-btn-static');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = false;
+        button.classList.remove('ocf-disabled');
+
+        if (count === null || count === undefined) {
+            button.innerHTML = 'Показать';
+            return;
+        }
+
+        button.innerHTML = `Показать <b class="ocf-btn-label">${count}</b> товаров`;
+    };
+
+    const setStaticButtonLoading = () => {
+        const button = filterBox.querySelector('.ocf-search-btn-static');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = true;
+        button.classList.add('ocf-disabled');
+        button.innerHTML = 'Загрузка...';
+    };
+
     const filterKeys = [
         'price',
         'manufacturers',
@@ -481,7 +528,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         activeController = new AbortController();
 
-        setPopoverLoading(target);
+        if (isMobileFilter()) {
+            hidePopover();
+            setStaticButtonLoading();
+        } else {
+            setPopoverLoading(target);
+        }
 
         try {
             const response = await fetch(url.toString(), {
@@ -518,10 +570,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const total = getTotalFromDocument(doc);
 
-            setPopoverResult(total, target);
+            updateStaticButton(total);
+
+            if (!isMobileFilter()) {
+                setPopoverResult(total, target);
+            }
         } catch (error) {
             if (error.name !== 'AbortError') {
                 hidePopover();
+                updateStaticButton(null);
             }
         }
     };
@@ -708,6 +765,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     document.addEventListener('click', (event) => {
+        const openButton = event.target.closest('[data-ocf-mobile-open]');
+        const closeButton = event.target.closest('[data-ocf-mobile-close]');
+
+        if (openButton) {
+            event.preventDefault();
+            openMobileFilter();
+            return;
+        }
+
+        if (closeButton) {
+            event.preventDefault();
+            closeMobileFilter();
+            return;
+        }
+
+        if (
+            isMobileFilter() &&
+            filterBox.classList.contains('ocf-mobile-active') &&
+            !filterBox.contains(event.target)
+        ) {
+            event.preventDefault();
+            closeMobileFilter();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeMobileFilter();
+        }
+    });
+
+    filterBox.addEventListener('touchstart', (event) => {
+        const touch = event.changedTouches[0];
+
+        mobileStartX = touch.screenX;
+        mobileStartY = touch.screenY;
+    }, { passive: true });
+
+    filterBox.addEventListener('touchend', (event) => {
+        if (!isMobileFilter() || !filterBox.classList.contains('ocf-mobile-active')) {
+            return;
+        }
+
+        const touch = event.changedTouches[0];
+        const diffX = touch.screenX - mobileStartX;
+        const diffY = touch.screenY - mobileStartY;
+
+        const ratioX = Math.abs(diffX / diffY);
+        const ratioY = Math.abs(diffY / diffX);
+        const absDiff = Math.abs(ratioX > ratioY ? diffX : diffY);
+
+        if (absDiff < 30 || ratioX <= ratioY) {
+            return;
+        }
+
+        if (diffX < 0) {
+            closeMobileFilter();
+        }
+    }, { passive: true });
+
+    document.addEventListener('click', (event) => {
         const popover = filterBox.querySelector('#oc-filter-popover');
 
         if (!popover) {
@@ -725,8 +843,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.addEventListener('resize', () => {
-        if (lastPopoverTarget) {
-            positionPopover(lastPopoverTarget);
+        if (!isMobileFilter()) {
+            closeMobileFilter();
+
+            if (lastPopoverTarget) {
+                positionPopover(lastPopoverTarget);
+            }
         }
     });
 

@@ -76,7 +76,18 @@
                         @if($products->isNotEmpty())
                             <div class="view-box">
                                 <div class="row">
-                                    <div class="col-12 col-sm-12 localstorage d-flex align-items-center justify-content-between">
+                                    <div class="col-6 d-md-none">
+                                        <button
+                                            type="button"
+                                            class="ocf-mobile-filter-btn"
+                                            data-ocf-mobile-open
+                                            aria-label="Открыть фильтр"
+                                        >
+                                            <span>Фильтр</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="col-6 col-sm-12 localstorage d-flex align-items-center justify-content-between box-wrap">
                                         <div class="ch-limit-sorts d-flex">
                                             <div class="btn-group d-inline-flex align-items-center">
                                                 <button type="button" class="btn btn-sort-limit dropdown-toggle d-block d-md-none" data-bs-toggle="dropdown">

@@ -102,20 +102,30 @@ class ProductFilterComposer
 
         unset($filters['manufacturer']);
 
-        if (!in_array($manufacturerId, $manufacturerIds, true)) {
-            $manufacturerIds[] = $manufacturerId;
+        if (in_array($manufacturerId, $manufacturerIds, true)) {
+            return $this->countProducts(
+                $this->queryForFilters($filters)
+            );
         }
 
-        $manufacturerToken = ManufacturerFilterCodec::encode($manufacturerIds);
+        if (empty($manufacturerIds)) {
+            $candidateFilters = $filters;
+            $candidateFilters['manufacturers'] = ManufacturerFilterCodec::encode([$manufacturerId]);
 
-        if ($manufacturerToken === '') {
-            unset($filters['manufacturers']);
-        } else {
-            $filters['manufacturers'] = $manufacturerToken;
+            return $this->countProducts(
+                $this->queryForFilters($candidateFilters)
+            );
         }
 
-        return $this->countProducts(
-            $this->queryForFilters($filters)
+        $currentFilters = $filters;
+        $currentFilters['manufacturers'] = ManufacturerFilterCodec::encode($manufacturerIds);
+
+        $candidateFilters = $filters;
+        $candidateFilters['manufacturers'] = ManufacturerFilterCodec::encode([$manufacturerId]);
+
+        return $this->countAdditionalProducts(
+            $candidateFilters,
+            $currentFilters
         );
     }
 
@@ -199,42 +209,41 @@ class ProductFilterComposer
         $selectedValueIds = collect($groups[$attributeId] ?? [])
             ->filter(fn ($id) => is_numeric($id))
             ->map(fn ($id) => (int) $id)
-            ->values();
-
-        /*
-         * Если значение еще не выбрано — считаем результат,
-         * как если бы пользователь его добавил.
-         *
-         * Например:
-         * сейчас: Объем = 10 ml
-         * считаем 15 ml:
-         * Объем = 10 ml OR 15 ml
-         */
-        if (!$selectedValueIds->contains($valueId)) {
-            $selectedValueIds->push($valueId);
-        }
-
-        $selectedValueIds = $selectedValueIds
             ->unique()
             ->sort()
             ->values();
 
+        if ($selectedValueIds->contains($valueId)) {
+            return $this->countProducts(
+                $this->queryForFilters($filters)
+            );
+        }
+
         if ($selectedValueIds->isEmpty()) {
-            unset($groups[$attributeId]);
-        } else {
-            $groups[$attributeId] = $selectedValueIds->all();
+            $candidateGroups = $groups;
+            $candidateGroups[$attributeId] = [$valueId];
+
+            $candidateFilters = $filters;
+            $candidateFilters['attribute'] = AttributeFilterCodec::encode($candidateGroups);
+
+            return $this->countProducts(
+                $this->queryForFilters($candidateFilters)
+            );
         }
 
-        $attributeToken = AttributeFilterCodec::encode($groups);
+        $currentFilters = $filters;
+        $currentGroups = $groups;
+        $currentGroups[$attributeId] = $selectedValueIds->all();
+        $currentFilters['attribute'] = AttributeFilterCodec::encode($currentGroups);
 
-        if ($attributeToken === '') {
-            unset($filters['attribute']);
-        } else {
-            $filters['attribute'] = $attributeToken;
-        }
+        $candidateFilters = $filters;
+        $candidateGroups = $groups;
+        $candidateGroups[$attributeId] = [$valueId];
+        $candidateFilters['attribute'] = AttributeFilterCodec::encode($candidateGroups);
 
-        return $this->countProducts(
-            $this->queryForFilters($filters)
+        return $this->countAdditionalProducts(
+            $candidateFilters,
+            $currentFilters
         );
     }
 
@@ -469,5 +478,21 @@ class ProductFilterComposer
             })
             ->filter(fn ($attribute) => $attribute->values->isNotEmpty())
             ->values();
+    }
+
+    private function countAdditionalProducts(array $candidateFilters, array $currentFilters): int
+    {
+        $candidateIdsQuery = $this->queryForFilters($candidateFilters)
+            ->select('products.id')
+            ->distinct();
+
+        $currentIdsQuery = $this->queryForFilters($currentFilters)
+            ->select('products.id')
+            ->distinct();
+
+        return (int) DB::query()
+            ->fromSub($candidateIdsQuery, 'candidate_products')
+            ->whereNotIn('candidate_products.id', $currentIdsQuery)
+            ->count();
     }
 }
