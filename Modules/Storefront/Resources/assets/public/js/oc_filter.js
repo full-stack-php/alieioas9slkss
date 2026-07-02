@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let timer = null;
     let previewHtml = null;
     let previewFilterHtml = null;
+    let previewDoc = null;
     let previewUrl = null;
     let activeController = null;
     let priceSliderChanging = false;
@@ -37,6 +38,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
+    const getBaseFilters = () => {
+        const form = getForm();
+
+        return {
+            attribute: form?.dataset.baseAttribute || '',
+            manufacturers: form?.dataset.baseManufacturers || '',
+            hasDiscount: form?.dataset.baseHasDiscount || '',
+            priceMin: form?.dataset.basePriceMin || '',
+            priceMax: form?.dataset.basePriceMax || '',
+        };
+    };
 
     const getPriceDefaults = () => {
         const slider = filterBox.querySelector('.js-price-slider');
@@ -59,6 +71,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
 
+        const baseFilters = getBaseFilters();
+
+        if (key === 'price[min]' && baseFilters.priceMin !== '') {
+            return String(value) !== String(baseFilters.priceMin);
+        }
+
+        if (key === 'price[max]' && baseFilters.priceMax !== '') {
+            return String(value) !== String(baseFilters.priceMax);
+        }
+
         const priceDefaults = getPriceDefaults();
         const numericValue = Number(value);
 
@@ -78,17 +100,21 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const buildManufacturerToken = () => {
-        let token = '';
+        const ids = [];
 
         filterBox
             .querySelectorAll('input[name="manufacturers[]"]:checked')
             .forEach((input) => {
                 if (input.value !== '') {
-                    token += `M${input.value}`;
+                    ids.push(Number(input.value));
                 }
             });
 
-        return token;
+        return [...new Set(ids)]
+            .filter(id => !Number.isNaN(id))
+            .sort((a, b) => a - b)
+            .map(id => `M${id}`)
+            .join('');
     };
 
     const buildAttributeToken = () => {
@@ -97,8 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
         filterBox
             .querySelectorAll('input[data-filter="attribute"]:checked')
             .forEach((input) => {
-                const attributeId = input.dataset.attributeId;
-                const valueId = input.dataset.valueId;
+                const attributeId = Number(input.dataset.attributeId);
+                const valueId = Number(input.dataset.valueId);
 
                 if (!attributeId || !valueId) {
                     return;
@@ -113,13 +139,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let token = '';
 
-        groups.forEach((valueIds, attributeId) => {
-            token += `F${attributeId}`;
+        [...groups.keys()]
+            .sort((a, b) => a - b)
+            .forEach((attributeId) => {
+                token += `F${attributeId}`;
 
-            [...new Set(valueIds)].forEach((valueId) => {
-                token += `V${valueId}`;
+                [...new Set(groups.get(attributeId))]
+                    .sort((a, b) => a - b)
+                    .forEach((valueId) => {
+                        token += `V${valueId}`;
+                    });
             });
-        });
 
         return token;
     };
@@ -165,15 +195,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        const baseFilters = getBaseFilters();
+
         const attributeToken = buildAttributeToken();
 
-        if (attributeToken !== '') {
+        if (attributeToken !== '' && attributeToken !== baseFilters.attribute) {
             params.set('attribute', attributeToken);
         }
 
         const manufacturerToken = buildManufacturerToken();
 
-        if (manufacturerToken !== '') {
+        if (manufacturerToken !== '' && manufacturerToken !== baseFilters.manufacturers) {
             params.set('manufacturers', manufacturerToken);
         }
 
@@ -302,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
         previewUrl = url;
         previewHtml = null;
         previewFilterHtml = null;
+        previewDoc = null;
 
         if (activeController) {
             activeController.abort();
@@ -320,9 +353,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
             });
 
+            if (response.redirected && response.url) {
+                previewUrl = new URL(response.url);
+            }
+
             const html = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
+            previewDoc = doc;
 
             const newContent = doc.getElementById('product-listing-content');
             const newFilter = doc.getElementById('product-filter');
@@ -370,6 +408,8 @@ document.addEventListener('DOMContentLoaded', () => {
             initPriceSlider();
         }
 
+        syncSeoFromDocument(previewDoc);
+
         window.history.pushState({}, '', previewUrl.toString());
 
         content.classList.remove('is-loading');
@@ -380,6 +420,50 @@ document.addEventListener('DOMContentLoaded', () => {
             window.ProStickerLoad();
         }
     }
+
+    const replaceHtmlFromDocument = (selector, doc) => {
+        const currentElement = document.querySelector(selector);
+        const newElement = doc.querySelector(selector);
+
+        if (!currentElement || !newElement) {
+            return;
+        }
+
+        currentElement.innerHTML = newElement.innerHTML;
+    };
+
+    const syncMetaTag = (selector, doc) => {
+        const currentTag = document.head.querySelector(selector);
+        const newTag = doc.head.querySelector(selector);
+
+        if (!currentTag || !newTag) {
+            return;
+        }
+
+        currentTag.setAttribute('content', newTag.getAttribute('content') || '');
+    };
+
+    const syncSeoFromDocument = (doc) => {
+        if (!doc) {
+            return;
+        }
+
+        if (doc.title) {
+            document.title = doc.title;
+        }
+
+        syncMetaTag('meta[name="robots"]', doc);
+        syncMetaTag('meta[name="title"]', doc);
+        syncMetaTag('meta[name="description"]', doc);
+        syncMetaTag('meta[property="og:url"]', doc);
+        syncMetaTag('meta[property="og:title"]', doc);
+        syncMetaTag('meta[property="og:description"]', doc);
+
+        replaceHtmlFromDocument('#listing-breadcrumbs', doc);
+        replaceHtmlFromDocument('#listing-heading', doc);
+        replaceHtmlFromDocument('#listing-subcategories', doc);
+        replaceHtmlFromDocument('#listing-seo-content', doc);
+    };
 
     const initPriceSlider = () => {
         const slider = filterBox.querySelector('.js-price-slider');
@@ -480,6 +564,8 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         applyPreview();
     });
+
+
 
     document.addEventListener('click', (event) => {
         const popover = filterBox.querySelector('#oc-filter-popover');

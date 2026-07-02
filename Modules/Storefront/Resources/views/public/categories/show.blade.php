@@ -1,13 +1,14 @@
 @extends('storefront::public.layout')
 @use('Spatie\SchemaOrg\Schema')
-@section('title', $seoFilter->meta_title ?? $category->meta->meta_title ?: $category->name)
+@section('title', isset($seoFilter) && filled($seoFilter->meta_title) ? $seoFilter->meta_title : ($category->meta->meta_title ?: $category->name))
+
 @push('meta')
-    <meta name="title" content="{{ $seoFilter->meta_title ?? $category->meta->meta_title ?: $category->name }}">
-    <meta name="description" content="{{ $seoFilter->meta_description ?? $category->meta->meta_description }}">
+    <meta name="title" content="{{ isset($seoFilter) && filled($seoFilter->meta_title) ? $seoFilter->meta_title : ($category->meta->meta_title ?: $category->name) }}">
+    <meta name="description" content="{{ isset($seoFilter) && filled($seoFilter->meta_description) ? $seoFilter->meta_description : $category->meta->meta_description }}">
     <meta name="twitter:card" content="summary">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:title" content="{{ $seoFilter->meta_description ?? $category->meta->meta_description }}">
-    <meta property="og:description" content="{{ $seoFilter->meta_description ?? $category->meta->meta_description }}">
+    <meta property="og:title" content="{{ isset($seoFilter) && filled($seoFilter->meta_title) ? $seoFilter->meta_title : ($category->meta->meta_title ?: $category->name) }}">
+    <meta property="og:description" content="{{ isset($seoFilter) && filled($seoFilter->meta_description) ? $seoFilter->meta_description : $category->meta->meta_description }}">
     <meta property="og:image" content="{{ $category->logo->path }}">
     <meta property="og:locale" content="{{ locale() }}">
 
@@ -21,11 +22,13 @@
     <main>
         <div class="container">
 
-            @include('storefront::public.partials.breadcrumbs')
+            <div id="listing-breadcrumbs">
+                @include('storefront::public.partials.breadcrumbs')
+            </div>
 
             <div class="row">
-                <div class="col-xs-12 col-sm-12">
-                    <h1>{{ $category->h1_name ?? $category->name }}</h1>
+                <div class="col-xs-12 col-sm-12" id="listing-heading">
+                    <h1>{{ $seoFilter->h1 ?? $category->h1_name ?? $category->name }}</h1>
                 </div>
 
                 <div class="sub-categories">
@@ -151,23 +154,25 @@
                     @endpush
                 @endif
 
-            @if(isset($seoFilter) && filled($seoFilter->description))
-                <div class="row mt-5">
-                    <div class="col-12">
-                        <div class="p-content">
-                            {!! $seoFilter->description !!}
+            <div id="listing-seo-content">
+                @if(isset($seoFilter) && filled($seoFilter->description))
+                    <div class="row mt-5">
+                        <div class="col-12">
+                            <div class="p-content">
+                                {!! $seoFilter->description !!}
+                            </div>
                         </div>
                     </div>
-                </div>
-            @elseif(strlen($category->description) > 7)
-                <div class="row mt-5">
-                    <div class="col-12 col-12">
-                        <div class="p-content">
-                            {!! $category->description !!}
+                @elseif(strlen($category->description) > 7)
+                    <div class="row mt-5">
+                        <div class="col-12">
+                            <div class="p-content">
+                                {!! $category->description !!}
+                            </div>
                         </div>
                     </div>
-                </div>
-            @endif
+                @endif
+            </div>
 
 
             @if($category->faqs)

@@ -17,7 +17,13 @@
 /* Layout */
 #column-left {
     position: relative;
-    z-index: 6;
+    z-index: 1007;
+    overflow: visible;
+}
+
+#content {
+    position: relative;
+    z-index: 1;
 }
 
 .oc-filter-box {
@@ -31,7 +37,6 @@
 }
 
 #product-filter-form {
-    background: var(--oc-filter-bg);
     border-radius: 8px;
     padding: 0;
 }
@@ -272,9 +277,6 @@
     color: #2e3135;
 }
 
-/* Active visual state for sections with checked values.
-   JS not required in modern browsers because :has is supported in current Chrome.
-*/
 .oc-filter-box .filter-section:has(.form-check-input:checked) {
     border-color: #f3e2cd;
     background-color: #fff8f0;
@@ -475,7 +477,7 @@
     opacity: 0;
     top: 0;
     left: 0;
-    z-index: 1080;
+    z-index: 9999;
     display: none;
     font-size: 14px;
     background-color: #fff;
@@ -483,6 +485,16 @@
     box-shadow: 0 6px 30px rgb(0 0 0 / 25%);
     transition: transform 250ms ease-in-out, opacity 180ms linear;
     will-change: transform, opacity;
+    pointer-events: auto;
+}
+#column-left:has(.ocf-popover.show),
+#column-left:has(.ocf-popover.ocf-in) {
+    z-index: 9998;
+}
+
+.oc-filter-box:has(.ocf-popover.show),
+.oc-filter-box:has(.ocf-popover.ocf-in) {
+    z-index: 9999;
 }
 
 .ocf-popover.show,
@@ -552,4 +564,251 @@
 
 .ocf-btn-label {
     font-weight: 700;
+}
+
+/*slider start */
+/* noUiSlider adapted for our filter markup */
+.oc-filter-box .ocf-price-slider,
+.oc-filter-box .ocf-price-slider * {
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-user-select: none;
+    -ms-touch-action: none;
+    touch-action: none;
+    -ms-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.oc-filter-box .ocf-price-slider {
+    margin: 24px 10px 4px;
+}
+
+.oc-filter-box .noUi-target {
+    position: relative;
+    height: 18px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.oc-filter-box .noUi-base,
+.oc-filter-box .noUi-connects {
+    width: 100%;
+    height: 18px;
+    position: relative;
+    z-index: 1;
+}
+
+.oc-filter-box .noUi-connect,
+.oc-filter-box .noUi-origin {
+    will-change: transform;
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    right: 0;
+    transform-origin: 0;
+    transform-style: flat;
+}
+
+.oc-filter-box .noUi-connect {
+    height: 100%;
+    width: 100%;
+    background: transparent;
+}
+
+.oc-filter-box .noUi-txt-dir-rtl .noUi-origin {
+    left: 0;
+    right: auto;
+}
+
+.oc-filter-box .noUi-handle {
+    backface-visibility: hidden;
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    right: -13px;
+    top: -3px;
+    border: 3px solid #fff;
+    border-radius: 100%;
+    background-color: #7a4cd9;
+    cursor: default;
+    box-shadow: 0 3px 6px -3px #bbb;
+}
+
+.oc-filter-box .noUi-horizontal .noUi-handle {
+    width: 24px;
+    height: 24px;
+    right: -13px;
+    top: -3px;
+}
+
+.oc-filter-box .noUi-txt-dir-rtl .noUi-handle {
+    left: -13px;
+    right: auto;
+}
+
+.oc-filter-box .noUi-handle::before,
+.oc-filter-box .noUi-handle::after {
+    display: none;
+}
+
+.oc-filter-box .noUi-touch-area {
+    height: 100%;
+    width: 100%;
+}
+
+.oc-filter-box .noUi-state-tap .noUi-connect,
+.oc-filter-box .noUi-state-tap .noUi-origin {
+    transition: transform 0.3s;
+}
+
+.oc-filter-box .noUi-state-drag * {
+    cursor: inherit !important;
+}
+
+.oc-filter-box .noUi-base::before,
+.oc-filter-box .noUi-connect::before {
+    content: "";
+    border-radius: 20px;
+    width: 100%;
+    height: 4px;
+    position: absolute;
+    top: 50%;
+    margin-top: -2px;
+}
+
+.oc-filter-box .noUi-base::before {
+    background-color: #eceef2;
+}
+
+.oc-filter-box .noUi-connect::before {
+    background-color: #7a4cd9;
+}
+
+.oc-filter-box .noUi-connects::before,
+.oc-filter-box .noUi-connects::after {
+    content: "";
+    border-radius: 100%;
+    position: absolute;
+    background-color: #eceef2;
+    width: 10px;
+    height: 10px;
+    top: 50%;
+    margin-top: -5px;
+}
+
+.oc-filter-box .noUi-connects::before {
+    left: 0;
+    margin-left: -5px;
+}
+
+.oc-filter-box .noUi-connects::after {
+    right: 0;
+    margin-right: -5px;
+}
+
+.oc-filter-box .noUi-draggable {
+    cursor: ew-resize;
+}
+
+.oc-filter-box .noUi-active {
+    box-shadow: 0 0 0 6px rgba(51, 102, 213, 0.25);
+}
+
+.oc-filter-box.ocf-loading .noUi-handle,
+.oc-filter-box.is-loading .noUi-handle,
+.oc-filter-box .ocf-price-section.ocf-loading .noUi-handle {
+    background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.4) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.4) 50%,
+        rgba(255, 255, 255, 0.4) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 1rem 1rem;
+    animation: ocf-progress 600ms linear infinite;
+}
+
+.oc-filter-box [disabled].noUi-handle,
+.oc-filter-box [disabled] .noUi-handle,
+.oc-filter-box [disabled] .noUi-connect::before,
+.oc-filter-box.ocf-loading .noUi-connect::before,
+.oc-filter-box.is-loading .noUi-connect::before,
+.oc-filter-box .ocf-price-section.ocf-loading .noUi-connect::before {
+    background-color: #aeb5bd;
+}
+
+.oc-filter-box [disabled].noUi-target,
+.oc-filter-box [disabled].noUi-handle,
+.oc-filter-box [disabled] .noUi-handle {
+    cursor: not-allowed;
+}
+
+/* noUiSlider pips, if we enable pips later */
+.oc-filter-box .noUi-pips,
+.oc-filter-box .noUi-pips * {
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.oc-filter-box .noUi-pips {
+    position: relative;
+    color: #999;
+    padding: 10px 0 0;
+    height: 45px;
+}
+
+.oc-filter-box .noUi-value {
+    position: absolute;
+    margin-top: 15px;
+    top: 0;
+    white-space: nowrap;
+    text-align: center;
+    font-size: 11px;
+    transform: translate(-50%, 50%);
+}
+
+.oc-filter-box .noUi-marker:first-child + .noUi-value,
+.oc-filter-box .noUi-value:last-child {
+    color: #555;
+}
+
+.oc-filter-box .noUi-rtl .noUi-value {
+    transform: translate(50%, 50%);
+}
+
+.oc-filter-box .noUi-value-sub {
+    color: #ccc;
+    font-size: 10px;
+}
+
+.oc-filter-box .noUi-marker {
+    position: absolute;
+    background: #ccc;
+    margin-left: -1px;
+    width: 2px;
+    margin-top: 6px;
+    height: 3px;
+}
+
+.oc-filter-box .noUi-marker:first-child,
+.oc-filter-box .noUi-marker[style*="100%"] {
+    height: 10px;
+    margin-top: 0;
+}
+
+@keyframes ocf-progress {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 1rem 0;
+    }
 }

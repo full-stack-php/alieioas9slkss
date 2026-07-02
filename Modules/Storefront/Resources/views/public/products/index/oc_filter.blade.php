@@ -1,5 +1,14 @@
 <aside class="oc-filter-box" id="product-filter">
-    <form id="product-filter-form" action="{{ url()->current() }}" method="GET">
+    <form
+        id="product-filter-form"
+        action="{{ url()->current() }}"
+        method="GET"
+        data-base-attribute="{{ $seoFilterBaseFilters['attribute'] ?? '' }}"
+        data-base-manufacturers="{{ $seoFilterBaseFilters['manufacturers'] ?? '' }}"
+        data-base-has-discount="{{ $seoFilterBaseFilters['has_discount'] ?? '' }}"
+        data-base-price-min="{{ $seoFilterBaseFilters['price_min'] ?? '' }}"
+        data-base-price-max="{{ $seoFilterBaseFilters['price_max'] ?? '' }}"
+    >
         @if(request('query'))
             <input type="hidden" name="query" value="{{ request('query') }}">
         @endif
