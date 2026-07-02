@@ -391,6 +391,82 @@ document.addEventListener('DOMContentLoaded', () => {
         return newContent.querySelectorAll('.product-layout').length;
     };
 
+    const filterInputKey = (input) => {
+        if (!input) {
+            return '';
+        }
+
+        if (input.dataset.filter === 'attribute') {
+            return [
+                'attribute',
+                input.dataset.attributeId || '',
+                input.dataset.valueId || '',
+            ].join(':');
+        }
+
+        if (input.name === 'manufacturers[]') {
+            return [
+                'manufacturers',
+                input.value || '',
+            ].join(':');
+        }
+
+        if (input.name === 'has_discount' || input.name === 'specials') {
+            return 'has_discount';
+        }
+
+        return [
+            input.name || '',
+            input.value || '',
+        ].join(':');
+    };
+
+    const syncFilterCountsFromDocument = (newFilter) => {
+        if (!newFilter) {
+            return;
+        }
+
+        const currentInputs = filterBox.querySelectorAll(
+            '.form-check-input:not(.js-price-min):not(.js-price-max)'
+        );
+
+        currentInputs.forEach((currentInput) => {
+            const key = filterInputKey(currentInput);
+
+            if (!key) {
+                return;
+            }
+
+            const newInput = [...newFilter.querySelectorAll('.form-check-input')]
+                .find((input) => filterInputKey(input) === key);
+
+            if (!newInput) {
+                return;
+            }
+
+            const currentLabel = currentInput.closest('.form-check');
+            const newLabel = newInput.closest('.form-check');
+
+            if (!currentLabel || !newLabel) {
+                return;
+            }
+
+            const currentCount = currentLabel.querySelector('.filter-count');
+            const newCount = newLabel.querySelector('.filter-count');
+
+            if (currentCount && newCount) {
+                currentCount.textContent = newCount.textContent;
+            }
+
+            currentInput.disabled = newInput.disabled;
+
+            currentLabel.classList.toggle(
+                'ocf-disabled',
+                newLabel.classList.contains('ocf-disabled')
+            );
+        });
+    };
+
     const previewProducts = async (target) => {
         const url = buildUrl();
 
@@ -437,6 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (newFilter) {
                 previewFilterHtml = newFilter.innerHTML;
+                syncFilterCountsFromDocument(newFilter);
             }
 
             const total = getTotalFromDocument(doc);

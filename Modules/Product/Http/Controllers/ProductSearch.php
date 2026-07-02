@@ -9,6 +9,7 @@ use Modules\Category\Entities\Category;
 use Modules\Attribute\Entities\Attribute;
 use Modules\Product\Filters\ProductFilter;
 use Modules\Product\Events\ShowingProductList;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 trait ProductSearch
 {
@@ -35,10 +36,7 @@ trait ProductSearch
 //            $productIds = (clone $query)->select('products.id')->resetOrders()->pluck('id');
 //        }
 
-        $products = $query
-            ->select('products.*')
-            ->distinct('products.id')
-            ->paginate(request('perPage', 30));
+        $products = $this->paginateDistinctProducts($query, (int) request('perPage', 30));
 
         event(new ShowingProductList($products));
 
@@ -71,10 +69,7 @@ trait ProductSearch
             $productIds = (clone $query)->select('products.id')->resetOrders()->pluck('id');
         }
 
-        $products = $query
-            ->select('products.*')
-            ->distinct('products.id')
-            ->paginate(request('perPage', 15));
+        $products = $this->paginateDistinctProducts($query, (int) request('perPage', 15));
 
         event(new ShowingProductList($products));
 
@@ -114,5 +109,67 @@ trait ProductSearch
             ->whereIn('product_id', $productIds)
             ->distinct()
             ->pluck('category_id');
+    }
+
+    private function paginateDistinctProducts($query, int $perPage): LengthAwarePaginator
+    {
+        $page = LengthAwarePaginator::resolveCurrentPage();
+
+        /*
+         * Считаем total явно по уникальным products.id.
+         * Не доверяем paginator count на сложных фильтрах с distinct / whereExists.
+         */
+        $totalIdsQuery = (clone $query)
+            ->select('products.id')
+            ->distinct()
+            ->reorder();
+
+        $total = DB::query()
+            ->fromSub($totalIdsQuery, 'filtered_products')
+            ->count();
+
+        /*
+         * Для текущей страницы берем только ids.
+         * Здесь порядок оставляем от оригинального query, чтобы sort работал.
+         */
+        $pageIds = (clone $query)
+            ->select('products.id')
+            ->distinct()
+            ->forPage($page, $perPage)
+            ->pluck('products.id')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        if ($pageIds->isEmpty()) {
+            return new LengthAwarePaginator(
+                collect(),
+                $total,
+                $perPage,
+                $page,
+                [
+                    'path' => LengthAwarePaginator::resolveCurrentPath(),
+                    'query' => request()->query(),
+                ]
+            );
+        }
+
+        $products = (clone $query)
+            ->whereIn('products.id', $pageIds)
+            ->select('products.*')
+            ->distinct()
+            ->get()
+            ->sortBy(fn ($product) => $pageIds->search((int) $product->id))
+            ->values();
+
+        return new LengthAwarePaginator(
+            $products,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => LengthAwarePaginator::resolveCurrentPath(),
+                'query' => request()->query(),
+            ]
+        );
     }
 }
