@@ -1,0 +1,555 @@
+/* OC-like storefront filter adapted for:
+   storefront::public.products.index.oc_filter
+*/
+
+:root {
+    --oc-filter-accent: #7a4cd9;
+    --oc-filter-accent-soft: rgba(122, 76, 217, 0.22);
+    --oc-filter-text: #353535;
+    --oc-filter-muted: #8c9299;
+    --oc-filter-border: #eceef2;
+    --oc-filter-bg: #ffffff;
+    --oc-filter-soft-bg: #f5f7f9;
+    --oc-filter-disabled: #aeb5bd;
+    --oc-filter-danger: #d1524c;
+}
+
+/* Layout */
+#column-left {
+    position: relative;
+    z-index: 6;
+}
+
+.oc-filter-box {
+    width: 100%;
+    margin-bottom: 25px;
+}
+
+.oc-filter-box,
+.oc-filter-box * {
+    box-sizing: border-box;
+}
+
+#product-filter-form {
+    background: var(--oc-filter-bg);
+    border-radius: 8px;
+    padding: 0;
+}
+
+/* Filter card */
+.oc-filter-box .filter-section {
+    margin-bottom: 18px;
+    padding: 16px 16px 18px;
+    background: #fff;
+    border: 1px solid var(--oc-filter-border);
+    border-radius: 10px;
+}
+
+.oc-filter-box .filter-section:last-child {
+    margin-bottom: 0;
+}
+
+.oc-filter-box .filter-section h6 {
+    color: #212529;
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin: 0 0 14px;
+}
+
+/* Price inputs */
+.oc-filter-box .filter-section .row {
+    margin-left: -5px;
+    margin-right: -5px;
+}
+
+.oc-filter-box .filter-section .row > [class*="col-"] {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.oc-filter-box .form-control {
+    height: 38px;
+    width: 100%;
+    padding: 7px 11px;
+    border: 1px solid var(--oc-filter-border);
+    border-radius: 6px;
+    background-color: #fff;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.4;
+    box-shadow: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.oc-filter-box .form-control:focus {
+    border-color: var(--oc-filter-accent);
+    outline: 0;
+    box-shadow: 0 0 0 4px var(--oc-filter-accent-soft);
+}
+
+.oc-filter-box .form-control::placeholder {
+    color: #999;
+}
+
+.oc-filter-box .form-control[type="number"]::-webkit-outer-spin-button,
+.oc-filter-box .form-control[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.oc-filter-box .form-control[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Value list */
+.oc-filter-box .filter-checkbox {
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+}
+
+.oc-filter-box .filter-checkbox::-webkit-scrollbar {
+    width: 4px;
+}
+
+.oc-filter-box .filter-checkbox::-webkit-scrollbar-track {
+    background-color: transparent;
+    border-radius: 10px;
+}
+
+.oc-filter-box .filter-checkbox::-webkit-scrollbar-thumb {
+    background-color: #dfe3ed;
+    border-radius: 10px;
+}
+
+.oc-filter-box .filter-checkbox:hover::-webkit-scrollbar-thumb {
+    background-color: #9096a4;
+}
+
+/* Checkbox row */
+.oc-filter-box .form-check {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    min-height: 22px;
+    margin: 0 0 8px;
+    padding: 0;
+    cursor: pointer;
+    color: var(--oc-filter-text);
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 400;
+    text-decoration: none;
+}
+
+.oc-filter-box .form-check:last-child {
+    margin-bottom: 0;
+}
+
+.oc-filter-box .form-check-input {
+    position: relative;
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    margin: 2px 10px 0 0;
+    border: 1px solid #adb5bd;
+    border-radius: 3px;
+    background-color: #fff;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    box-shadow: none;
+    transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.oc-filter-box .form-check-input:hover {
+    border-color: var(--oc-filter-accent);
+}
+
+.oc-filter-box .form-check-input:focus {
+    outline: none;
+}
+
+.oc-filter-box .form-check-input:checked {
+    border-color: var(--oc-filter-accent);
+    background-color: var(--oc-filter-accent);
+}
+
+.oc-filter-box .form-check-input:checked::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 5px;
+    height: 9px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.oc-filter-box .form-check-input:disabled {
+    border-color: var(--oc-filter-border);
+    background-color: #eceef2;
+    cursor: not-allowed;
+}
+
+.oc-filter-box .form-check-input:disabled + .form-check-label {
+    color: var(--oc-filter-disabled);
+    cursor: not-allowed;
+}
+
+.oc-filter-box .form-check-label {
+    flex: 1 1 auto;
+    margin: 0;
+    color: inherit;
+    cursor: pointer;
+    word-break: break-word;
+}
+
+/* Optional count if later you add:
+   <span class="filter-count">12</span>
+*/
+.oc-filter-box .filter-count {
+    margin-left: auto;
+    padding: 2px 6px;
+    border-radius: 50px;
+    background-color: var(--oc-filter-border);
+    color: #46494e;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+.oc-filter-box .form-check-input:checked ~ .filter-count {
+    display: none;
+}
+
+/* Actions */
+.oc-filter-box .filter-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    padding: 12px 0 0;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #fff 28%);
+}
+
+.oc-filter-box .btn {
+    min-height: 40px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 600;
+    box-shadow: none;
+}
+
+.oc-filter-box .btn-primary {
+    border-color: var(--oc-filter-accent);
+    background-color: var(--oc-filter-accent);
+    color: #fff;
+}
+
+.oc-filter-box .btn-primary:hover,
+.oc-filter-box .btn-primary:focus,
+.oc-filter-box .btn-primary:active {
+    border-color: #6337c8;
+    background-color: #6337c8;
+    color: #fff;
+}
+
+.oc-filter-box .btn-light {
+    border: 1px solid var(--oc-filter-border);
+    background-color: var(--oc-filter-soft-bg);
+    color: #4a5057;
+}
+
+.oc-filter-box .btn-light:hover,
+.oc-filter-box .btn-light:focus {
+    background-color: #eceef2;
+    color: #2e3135;
+}
+
+/* Active visual state for sections with checked values.
+   JS not required in modern browsers because :has is supported in current Chrome.
+*/
+.oc-filter-box .filter-section:has(.form-check-input:checked) {
+    border-color: #f3e2cd;
+    background-color: #fff8f0;
+}
+
+.oc-filter-box .filter-section:has(.form-check-input:checked) h6 {
+    color: #613101;
+}
+
+/* Product area AJAX loading */
+#product-listing-content {
+    position: relative;
+    min-height: 120px;
+}
+
+#product-listing-content.is-loading {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+#product-listing-content.is-loading::after {
+    content: "";
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    width: 34px;
+    height: 34px;
+    margin-left: -17px;
+    border-radius: 50%;
+    border: 3px solid var(--oc-filter-border);
+    border-top-color: var(--oc-filter-accent);
+    animation: oc-filter-spin 650ms linear infinite;
+    z-index: 5;
+}
+
+@keyframes oc-filter-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Desktop */
+@media (min-width: 768px) {
+    .oc-filter-box {
+        position: sticky;
+        top: 20px;
+    }
+
+    .oc-filter-box .filter-section {
+        margin-bottom: 16px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+    #column-left {
+        margin-bottom: 20px;
+    }
+
+    .oc-filter-box {
+        margin-bottom: 20px;
+    }
+
+    #product-filter-form {
+        padding: 0;
+    }
+
+    .oc-filter-box .filter-section {
+        padding: 14px 14px 16px;
+        margin-bottom: 12px;
+        border-radius: 9px;
+    }
+
+    .oc-filter-box .filter-section h6 {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .oc-filter-box .form-check {
+        font-size: 15px;
+        margin-bottom: 10px;
+    }
+
+    .oc-filter-box .form-check-input {
+        flex-basis: 20px;
+        width: 20px;
+        height: 20px;
+        margin-top: 1px;
+    }
+
+    .oc-filter-box .form-check-input:checked::after {
+        left: 6px;
+        top: 2px;
+        width: 6px;
+        height: 11px;
+    }
+
+    .oc-filter-box .filter-checkbox {
+        max-height: 260px;
+    }
+
+    .oc-filter-box .filter-actions {
+        padding-top: 10px;
+    }
+}
+
+/* noUiSlider */
+.ocf-price-slider {
+    margin: 24px 10px 4px;
+}
+
+.oc-filter-box .noUi-target {
+    height: 18px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.oc-filter-box .noUi-base,
+.oc-filter-box .noUi-connects {
+    height: 18px;
+}
+
+.oc-filter-box .noUi-base::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 4px;
+    margin-top: -2px;
+    border-radius: 20px;
+    background-color: #eceef2;
+}
+
+.oc-filter-box .noUi-connect {
+    background: transparent;
+}
+
+.oc-filter-box .noUi-connect::before {
+    content: "";
+    position: absolute;
+    inset: 7px 0;
+    border-radius: 20px;
+    background-color: var(--oc-filter-accent);
+}
+
+.oc-filter-box .noUi-handle {
+    width: 24px;
+    height: 24px;
+    right: -12px;
+    top: -3px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    background-color: var(--oc-filter-accent);
+    box-shadow: 0 3px 6px -3px #bbb;
+    cursor: pointer;
+}
+
+.oc-filter-box .noUi-handle::before,
+.oc-filter-box .noUi-handle::after {
+    display: none;
+}
+
+.oc-filter-box .noUi-handle:focus,
+.oc-filter-box .noUi-active {
+    box-shadow: 0 0 0 6px var(--oc-filter-accent-soft);
+}
+
+/* Disabled values */
+.oc-filter-box .form-check.ocf-disabled {
+    color: var(--oc-filter-disabled);
+    cursor: not-allowed;
+}
+
+.oc-filter-box .form-check.ocf-disabled .form-check-label {
+    color: var(--oc-filter-disabled);
+    cursor: not-allowed;
+}
+
+/* Popover */
+.oc-filter-box {
+    position: relative;
+    overflow: visible;
+}
+
+#column-left {
+    overflow: visible;
+}
+
+.ocf-popover {
+    position: absolute;
+    max-width: 260px;
+    opacity: 0;
+    top: 0;
+    left: 0;
+    z-index: 1080;
+    display: none;
+    font-size: 14px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 6px 30px rgb(0 0 0 / 25%);
+    transition: transform 250ms ease-in-out, opacity 180ms linear;
+    will-change: transform, opacity;
+}
+
+.ocf-popover.show,
+.ocf-popover.ocf-in {
+    opacity: 1;
+}
+
+.ocf-popover.ocf-right.show,
+.ocf-popover.ocf-right.ocf-in {
+    transform: translateX(3px);
+}
+
+.ocf-popover.ocf-left.show,
+.ocf-popover.ocf-left.ocf-in {
+    transform: translateX(-3px);
+}
+
+.ocf-popover .ocf-arrow {
+    position: absolute;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    background-color: #fff;
+    border-radius: 3px;
+    transform: rotate(45deg);
+    z-index: -1;
+}
+
+.ocf-popover.ocf-right .ocf-arrow {
+    left: -5px;
+}
+
+.ocf-popover.ocf-left .ocf-arrow {
+    right: -5px;
+}
+
+.ocf-popover-content {
+    padding: 12px;
+}
+
+.ocf-search-btn-popover {
+    min-width: 190px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 0;
+    background-color: #6a7275;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: center;
+    cursor: pointer;
+}
+
+.ocf-search-btn-popover:hover,
+.ocf-search-btn-popover:focus,
+.ocf-search-btn-popover:active {
+    background-color: #596063;
+    color: #fff;
+}
+
+.ocf-search-btn-popover.ocf-disabled,
+.ocf-search-btn-popover:disabled {
+    cursor: wait;
+    opacity: 0.75;
+}
+
+.ocf-btn-label {
+    font-weight: 700;
+}

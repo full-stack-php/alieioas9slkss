@@ -4,9 +4,17 @@ namespace Modules\Core\Http;
 
 use Illuminate\Support\Facades\Cache;
 use Modules\Blog\Entities\BlogPost;
+use Modules\Blog\Http\Controllers\BlogCategoryPostController;
+use Modules\Blog\Http\Controllers\BlogPostController;
+use Modules\Category\Http\Controllers\CategoryProductController;
 use Modules\Page\Entities\Page;
 use Modules\Category\Entities\Category;
 use Modules\Blog\Entities\BlogCategory;
+use Modules\Page\Http\Controllers\PageController;
+use Modules\Product\Entities\Product;
+use Modules\Product\Http\Controllers\ProductController;
+use Modules\SeoFilter\Entities\SeoFilter;
+use Modules\SeoFilter\Http\Controllers\SeoFilterController;
 
 class UrlResolver
 {
@@ -31,11 +39,31 @@ class UrlResolver
     {
         $map = [];
 
+        SeoFilter::active()->get()->each(function ($seoFilter) use (&$map) {
+            $path = trim($seoFilter->path, '/');
+
+            if ($path === '') {
+                return;
+            }
+
+            if (isset($map[$path])) {
+                return;
+            }
+
+            $map[$path] = [
+                'type' => 'seo_filter',
+                'id' => $seoFilter->id,
+                'slug' => $path,
+                'controller' => SeoFilterController::class,
+                'method' => 'show',
+            ];
+        });
+
         Page::all()->each(function ($page) use (&$map) {
             $map[$page->slug] = [
                 'type' => 'page',
                 'slug' => $page->slug,
-                'controller' => \Modules\Page\Http\Controllers\PageController::class,
+                'controller' => PageController::class,
                 'method' => 'show'
             ];
         });
@@ -45,7 +73,7 @@ class UrlResolver
             $map[$path] = [
                 'type' => 'category',
                 'slug' => $category->slug,
-                'controller' => \Modules\Category\Http\Controllers\CategoryProductController::class,
+                'controller' => CategoryProductController::class,
                 'method' => 'index'
             ];
         });
@@ -57,7 +85,7 @@ class UrlResolver
                 'type' => 'blog_category',
                 'id' => $blogCat->id,
                 'slug' => $blogCat->slug,
-                'controller' => \Modules\Blog\Http\Controllers\BlogCategoryPostController::class,
+                'controller' => BlogCategoryPostController::class,
                 'method' => 'index'
             ];
         });
@@ -73,19 +101,19 @@ class UrlResolver
                 'type' => 'blog_post',
                 'id' => $post->id,
                 'slug' => $post->slug,
-                'controller' => \Modules\Blog\Http\Controllers\BlogPostController::class,
+                'controller' => BlogPostController::class,
                 'method' => 'show'
             ];
         });
 
-        \Modules\Product\Entities\Product::all()->each(function ($product) use (&$map) {
+        Product::all()->each(function ($product) use (&$map) {
             $path = 'product/' . $product->slug;
 
             $map[$path] = [
                 'type' => 'product',
                 'slug' => $product->slug,
                 'id'   => $product->id,
-                'controller' => \Modules\Product\Http\Controllers\ProductController::class,
+                'controller' => ProductController::class,
                 'method' => 'show'
             ];
         });

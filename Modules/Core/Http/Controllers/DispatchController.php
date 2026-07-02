@@ -4,6 +4,8 @@ namespace Modules\Core\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Modules\Blog\Entities\BlogPost;
+
 class DispatchController extends Controller
 {
     public function handle(Request $request)
@@ -15,8 +17,14 @@ class DispatchController extends Controller
         }
         $parameter = $resolved['slug'] ?? $resolved['id'];
 
+        if ($resolved['type'] === 'seo_filter') {
+            return app()->call([app($resolved['controller']), $resolved['method']], [
+                'id' => $resolved['id'],
+            ]);
+        }
+
         if ($resolved['type'] === 'blog_post') {
-            $post = \Modules\Blog\Entities\BlogPost::with('category')->find($resolved['id']);
+            $post = BlogPost::with('category')->find($resolved['id']);
 
             return app()->call([app($resolved['controller']), $resolved['method']], [
                 'category' => $post->category->slug,
