@@ -2,16 +2,16 @@
 
 namespace Modules\Product\Filters;
 
-use Modules\Category\Entities\Category;
-use Modules\Support\Money;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Query\JoinClause;
+use Illuminate\Support\Facades\DB;
 use Modules\Attribute\Entities\Attribute;
 use Modules\Attribute\Entities\AttributeValue;
+use Modules\Category\Entities\Category;
+use Modules\Support\Money;
 
 class QueryStringFilter
 {
-    private $sorts = [
+    private array $sorts = [
         'relevance',
         'alphabetic',
         'toprated',
@@ -20,7 +20,7 @@ class QueryStringFilter
         'pricehightolow',
     ];
 
-    private $groupColumns = [
+    private array $groupColumns = [
         'products.id',
         'slug',
         'price',
@@ -36,22 +36,19 @@ class QueryStringFilter
         'new_to',
     ];
 
-
-    public function sort($query, $sortType)
+    public function sort($query, $sortType): void
     {
         if ($this->sortTypeExists($sortType)) {
-            return $this->{$sortType}($query);
+            $this->{$sortType}($query);
         }
     }
 
-
-    public function relevance()
+    public function relevance(): void
     {
-        // Products are searched by relevant order by default.
+        //
     }
 
-
-    public function alphabetic($query)
+    public function alphabetic($query): void
     {
         $query->join('product_translations', function (JoinClause $join) {
             $join->on('products.id', '=', 'product_translations.product_id');
@@ -60,8 +57,7 @@ class QueryStringFilter
             ->orderBy('product_translations.name');
     }
 
-
-    public function topRated($query)
+    public function topRated($query): void
     {
         $query->selectRaw('AVG(reviews.rating) as avg_rating')
             ->leftJoin('reviews', function (JoinClause $join) {
@@ -72,60 +68,99 @@ class QueryStringFilter
             ->orderByDesc('avg_rating');
     }
 
-
-    public function latest($query)
+    public function latest($query): void
     {
         $query->latest();
     }
 
-
-    public function priceLowToHigh($query)
+    public function priceLowToHigh($query): void
     {
         $query->orderBy('selling_price');
     }
 
-
-    public function priceHighToLow($query)
+    public function priceHighToLow($query): void
     {
         $query->orderByDesc('selling_price');
     }
 
-
-    public function fromPrice($query, $price)
+    /**
+     * Новый формат:
+     * price[min]=100&price[max]=1000
+     */
+    public function price($query, array $range): void
     {
-        $convertedPrice = $this->convertPrice($price);
+        $from = $range['min'] ?? $range['from'] ?? null;
+        $to = $range['max'] ?? $range['to'] ?? null;
 
-        $query->where(function ($productQuery) use ($convertedPrice) {
-            $productQuery->where('selling_price', '>=', $convertedPrice);
-            $productQuery->orWhereHas('variants', function ($variantQuery) use ($convertedPrice) {
-                $variantQuery->where('selling_price', '>=', $convertedPrice);
-            });
+        if ($from !== null && $from !== '') {
+            $this->fromPrice($query, $from);
+        }
+
+        if ($to !== null && $to !== '') {
+            $this->toPrice($query, $to);
+        }
+    }
+
+    /**
+     * Старый формат оставляем:
+     * fromPrice=100
+     */
+    public function fromPrice($query, $price): void
+    {
+        $this->whereEffectivePrice($query, '>=', $this->convertPrice($price));
+    }
+
+    /**
+     * Старый формат оставляем:
+     * toPrice=1000
+     */
+    public function toPrice($query, $price): void
+    {
+        $this->whereEffectivePrice($query, '<=', $this->convertPrice($price));
+    }
+
+    /**
+     * Старый бренд по slug оставляем, чтобы ничего не сломать.
+     */
+    public function brand($query, $value): void
+    {
+        if (is_array($value)) {
+            $this->manufacturers($query, $value);
+            return;
+        }
+
+        if (is_numeric($value)) {
+            $query->where('products.manufacturer_id', (int) $value);
+            return;
+        }
+
+        $query->whereHas('manufacturer', function ($brandQuery) use ($value) {
+            $brandQuery->where('slug', $value);
         });
     }
 
-
-    public function toPrice($query, $price)
+    public function manufacturers($query, $manufacturerIds): void
     {
-        $convertedPrice = $this->convertPrice($price);
+        $manufacturerIds = ManufacturerFilterCodec::normalize($manufacturerIds);
 
-        $query->where(function ($productQuery) use ($convertedPrice) {
-            $productQuery->where('selling_price', '<=', $convertedPrice);
-            $productQuery->orWhereHas('variants', function ($variantQuery) use ($convertedPrice) {
-                $variantQuery->where('selling_price', '<=', $convertedPrice);
-            });
+        if (empty($manufacturerIds)) {
+            return;
+        }
+
+        $query->where(function ($query) use ($manufacturerIds) {
+            $query
+                ->whereIn('products.brand_id', $manufacturerIds)
+                ->orWhereIn('products.manufacturer_id', $manufacturerIds);
         });
     }
 
-
-    public function brand($query, $slug)
+    public function manufacturer($query, $manufacturerIds): void
     {
-        $query->whereHas('brand', function ($brandQuery) use ($slug) {
-            $brandQuery->where('slug', $slug);
-        });
+        $this->manufacturers($query, $manufacturerIds);
     }
 
 
-    public function category($query, $slug)
+    public function category($query, $slug): void
     {
         $categoryId = Category::where('slug', $slug)->value('id');
 
@@ -141,45 +176,169 @@ class QueryStringFilter
         });
     }
 
-
-    public function attribute($query, $attributeFilters)
+    public function attribute($query, $attributeFilters): void
     {
-        foreach ($this->getAttributeIds($attributeFilters) as $index => $attributeId) {
-            $query->join("product_attributes as pa_{$index}", 'products.id', '=', "pa_{$index}.product_id")
-                ->whereRaw("pa_{$index}.attribute_id = {$attributeId} AND EXISTS (
-                    SELECT *
-                    FROM `product_attribute_values`
-                    WHERE `pa_{$index}`.`id` = `product_attribute_values`.`product_attribute_id`
-                    AND `attribute_value_id` in ({$this->getAttributeValueIds($attributeFilters)})
-                )");
+        $groups = AttributeFilterCodec::normalize($attributeFilters);
+
+        foreach ($groups as $index => $value) {
+            $attributeId = (int) $index;
+            $valueIds = collect((array) $value)
+                ->filter(fn ($id) => is_numeric($id))
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values();
+
+            if ($attributeId < 1 || $valueIds->isEmpty()) {
+                continue;
+            }
+
+            $alias = "pa_{$attributeId}";
+
+            $query->join("product_attributes as {$alias}", 'products.id', '=', "{$alias}.product_id")
+                ->where("{$alias}.attribute_id", $attributeId)
+                ->whereExists(function ($subQuery) use ($alias, $valueIds) {
+                    $subQuery->selectRaw(1)
+                        ->from('product_attribute_values')
+                        ->whereColumn("{$alias}.id", 'product_attribute_values.product_attribute_id')
+                        ->whereIn('product_attribute_values.attribute_value_id', $valueIds->all());
+                });
         }
     }
 
+    public function attributes($query, $attributeFilters): void
+    {
+        $this->attribute($query, $attributeFilters);
+    }
 
-    private function sortTypeExists($sortType)
+
+    /**
+     * Только товары со скидкой:
+     * has_discount=1
+     */
+    public function hasDiscount($query, $value): void
+    {
+        if (!$this->truthy($value)) {
+            return;
+        }
+
+        $query->where(function ($q) {
+            $this->whereActiveProductSpecial($q);
+
+            $q->orWhereExists(function ($subQuery) {
+                $subQuery->select(DB::raw(1))
+                    ->from('product_packagings as pp')
+                    ->whereColumn('pp.product_id', 'products.id')
+                    ->where('pp.is_active', true)
+                    ->whereNull('pp.deleted_at')
+                    ->whereNotNull('pp.special_price')
+                    ->where('pp.special_price', '>', 0);
+            });
+        });
+    }
+
+    public function specials($query, $value): void
+    {
+        $this->hasDiscount($query, $value);
+    }
+
+    /**
+     * Цена считается как:
+     * - products.selling_price
+     * - product_packagings.price * qty
+     * - product_packagings.special_price * qty
+     * - product_packagings special percent * qty
+     */
+    private function whereEffectivePrice($query, string $operator, int|float $price): void
+    {
+        $packagingPriceExpression = "
+            (
+                CASE
+                    WHEN pp.special_price IS NOT NULL
+                         AND pp.special_price > 0
+                         AND pp.special_price_type = 'percent'
+                    THEN pp.price - (pp.price * pp.special_price / 100)
+
+                    WHEN pp.special_price IS NOT NULL
+                         AND pp.special_price > 0
+                         AND pp.special_price < pp.price
+                    THEN pp.special_price
+
+                    ELSE pp.price
+                END
+            ) * COALESCE(pp.qty, 1)
+        ";
+
+        $query->where(function ($productQuery) use ($operator, $price, $packagingPriceExpression) {
+            $productQuery->where('products.selling_price', $operator, $price)
+                ->orWhereExists(function ($subQuery) use ($operator, $price, $packagingPriceExpression) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('product_packagings as pp')
+                        ->whereColumn('pp.product_id', 'products.id')
+                        ->where('pp.is_active', true)
+                        ->whereNull('pp.deleted_at')
+                        ->whereRaw("{$packagingPriceExpression} {$operator} ?", [$price]);
+                });
+        });
+    }
+
+    private function whereActiveProductSpecial($query): void
+    {
+        $query->where(function ($specialQuery) {
+            $specialQuery
+                ->whereNotNull('products.special_price')
+                ->where('products.special_price', '>', 0)
+                ->where(function ($q) {
+                    $q->whereNull('products.special_price_start')
+                        ->orWhereDate('products.special_price_start', '<=', today());
+                })
+                ->where(function ($q) {
+                    $q->whereNull('products.special_price_end')
+                        ->orWhereDate('products.special_price_end', '>=', today());
+                });
+        });
+    }
+
+    private function sortTypeExists($sortType): bool
     {
         return in_array(strtolower($sortType), $this->sorts);
     }
 
-
-    private function convertPrice($price)
+    private function convertPrice($price): int|float
     {
         return Money::inCurrentCurrency($price)->convertToDefaultCurrency()->amount();
     }
 
-
     private function getAttributeIds($attributeFilters)
     {
-        return Attribute::whereIn('slug', array_keys($attributeFilters))->pluck('id');
+        return Attribute::whereIn('slug', array_keys((array) $attributeFilters))->pluck('id');
     }
 
-
-    private function getAttributeValueIds($attributeFilters)
+    private function getAttributeValueIds($attributeFilters): string
     {
         return once(function () use ($attributeFilters) {
-            return AttributeValue::whereTranslationIn('value', array_flatten($attributeFilters))
+            return AttributeValue::whereTranslationIn('value', array_flatten((array) $attributeFilters))
                 ->pluck('id')
                 ->implode(',') ?: 'null';
         });
+    }
+
+    private function integerArray($value): array
+    {
+        return collect((array) $value)
+            ->flatten()
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function truthy($value): bool
+    {
+        if (is_array($value)) {
+            $value = reset($value);
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 }

@@ -3,12 +3,12 @@
 namespace Modules\Product\Filters;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ProductFilter
 {
-    private $request;
-    private $queryStringFilter;
-
+    private Request $request;
+    private QueryStringFilter $queryStringFilter;
 
     public function __construct(Request $request, QueryStringFilter $queryStringFilter)
     {
@@ -16,38 +16,48 @@ class ProductFilter
         $this->queryStringFilter = $queryStringFilter;
     }
 
-
     public function apply($query)
     {
         $query = $query->forCard();
 
         foreach ($this->filters() as $name => $value) {
-            if (!is_null($value)) {
-                $this->queryStringFilter->{$name}($query, $value);
+            if ($value === null || $value === '' || $value === []) {
+                continue;
+            }
+
+            $method = $this->methodForFilter($name);
+
+            if ($method) {
+                $this->queryStringFilter->{$method}($query, $value);
             }
         }
-
 
         return $query;
     }
 
-
-    private function filters()
+    private function filters(): array
     {
-//        return array_filter($this->request->all(), function ($key) {
-//            return $this->filterExists($key);
-//        }, ARRAY_FILTER_USE_KEY);
-//
-        // Old Filter
         return array_filter($this->request->query(), function ($filter) {
             return $this->filterExists($filter);
         }, ARRAY_FILTER_USE_KEY);
     }
 
-
-    private function filterExists($filter)
+    private function filterExists($filter): bool
     {
-        return method_exists($this->queryStringFilter, $filter) &&
-            is_callable([$this->queryStringFilter, $filter]);
+        return $this->methodForFilter($filter) !== null;
+    }
+
+    private function methodForFilter($filter): ?string
+    {
+        foreach ([$filter, Str::camel($filter)] as $method) {
+            if (
+                method_exists($this->queryStringFilter, $method) &&
+                is_callable([$this->queryStringFilter, $method])
+            ) {
+                return $method;
+            }
+        }
+
+        return null;
     }
 }

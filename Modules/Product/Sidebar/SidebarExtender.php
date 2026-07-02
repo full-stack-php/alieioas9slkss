@@ -26,6 +26,7 @@ class SidebarExtender extends BaseSidebarExtender
                         'admin.attributes.index',
                         'admin.attribute_sets.index',
                         'admin.options.index',
+                        'admin.seo_filters.index',
                     ])
                 );
 
