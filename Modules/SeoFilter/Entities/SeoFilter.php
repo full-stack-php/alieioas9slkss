@@ -2,6 +2,8 @@
 
 namespace Modules\SeoFilter\Entities;
 
+use Illuminate\Support\Str;
+use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use Modules\Category\Entities\Category;
 use Modules\SeoFilter\Admin\SeoFilterTable;
 use Modules\Support\Eloquent\Model;
@@ -63,8 +65,34 @@ class SeoFilter extends Model
         );
     }
 
-    public function url(): string
+    public function fullPath(): string
     {
-        return url($this->path);
+        $path = trim((string) $this->path, '/');
+
+        if (!$this->category_id || !$this->category->exists) {
+            return $path;
+        }
+
+        $categoryPath = trim($this->category->getFullPath(), '/');
+
+        if ($path === '') {
+            return $categoryPath;
+        }
+
+        if ($path === $categoryPath || Str::startsWith($path, $categoryPath . '/')) {
+            return $path;
+        }
+
+        return trim($categoryPath . '/' . $path, '/');
+    }
+
+    public function url(?string $locale = null): string
+    {
+        $locale = $locale ?: LaravelLocalization::getCurrentLocale();
+
+        return LaravelLocalization::getLocalizedURL(
+            $locale,
+            url($this->fullPath())
+        );
     }
 }

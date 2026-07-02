@@ -24,11 +24,14 @@ class AttributeFilterCodec
     {
         $result = '';
 
+        ksort($groups);
+
         foreach ($groups as $attributeId => $valueIds) {
             $valueIds = collect((array) $valueIds)
                 ->filter(fn ($id) => is_numeric($id))
                 ->map(fn ($id) => (int) $id)
                 ->unique()
+                ->sort()
                 ->values();
 
             if ($valueIds->isEmpty()) {

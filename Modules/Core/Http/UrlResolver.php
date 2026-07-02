@@ -39,26 +39,6 @@ class UrlResolver
     {
         $map = [];
 
-        SeoFilter::active()->get()->each(function ($seoFilter) use (&$map) {
-            $path = trim($seoFilter->path, '/');
-
-            if ($path === '') {
-                return;
-            }
-
-            if (isset($map[$path])) {
-                return;
-            }
-
-            $map[$path] = [
-                'type' => 'seo_filter',
-                'id' => $seoFilter->id,
-                'slug' => $path,
-                'controller' => SeoFilterController::class,
-                'method' => 'show',
-            ];
-        });
-
         Page::all()->each(function ($page) use (&$map) {
             $map[$page->slug] = [
                 'type' => 'page',
@@ -117,6 +97,29 @@ class UrlResolver
                 'method' => 'show'
             ];
         });
+
+        SeoFilter::active()
+            ->with('category')
+            ->get()
+            ->each(function ($seoFilter) use (&$map) {
+                $path = trim($seoFilter->fullPath(), '/');
+
+                if ($path === '') {
+                    return;
+                }
+
+                if (isset($map[$path])) {
+                    return;
+                }
+
+                $map[$path] = [
+                    'type' => 'seo_filter',
+                    'id' => $seoFilter->id,
+                    'slug' => $path,
+                    'controller' => SeoFilterController::class,
+                    'method' => 'show',
+                ];
+            });
 
         return $map;
     }

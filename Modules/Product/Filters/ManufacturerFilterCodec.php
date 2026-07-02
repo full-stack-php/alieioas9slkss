@@ -26,8 +26,10 @@ class ManufacturerFilterCodec
     {
         return collect($manufacturerIds)
             ->filter(fn ($id) => is_numeric($id))
-            ->map(fn ($id) => 'M' . (int) $id)
+            ->map(fn ($id) => (int) $id)
             ->unique()
+            ->sort()
+            ->map(fn ($id) => 'M' . $id)
             ->implode('');
     }
 

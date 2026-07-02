@@ -7,6 +7,8 @@ use Modules\Product\Entities\Product;
 use Modules\Category\Entities\Category;
 use Modules\Product\Filters\ProductFilter;
 use Modules\Product\Http\Controllers\ProductSearch;
+use Modules\SeoFilter\Services\SeoRobots;
+use Modules\SeoFilter\Services\SeoFilterMatcher;
 
 class CategoryProductController
 {
@@ -21,18 +23,32 @@ class CategoryProductController
      *
      * @return Response
      */
-    public function index($slug, Product $model, ProductFilter $productFilter)
-    {
+    public function index(
+        $slug,
+        Product $model,
+        ProductFilter $productFilter,
+        SeoFilterMatcher $seoFilterMatcher,
+        SeoRobots $seoRobots
+    ) {
         request()->merge(['category' => $slug]);
 
+        $category = Category::findBySlug($slug);
+
+        $seoFilter = $seoFilterMatcher->findByRequest($category);
+
+        if ($seoFilter) {
+            return redirect()->to($seoFilter->url(), 302);
+        }
 
         if (request()->expectsJson()) {
             return $this->searchProducts($model, $productFilter);
         }
 
         $data = $this->searchProductsNonJSON($model, $productFilter);
-        $data['category'] = Category::findBySlug($slug);
+        $data['category'] = $category;
         $data['breadcrumbs'] = $this->parseBreadcrumbs($data['category']);
+
+        $data['robotsMeta'] = $seoRobots->forQuery(request()->query());
 
         return view('storefront::public.categories.show', $data);
     }
