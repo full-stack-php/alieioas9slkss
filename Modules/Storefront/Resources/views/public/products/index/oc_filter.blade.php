@@ -3,6 +3,8 @@
         id="product-filter-form"
         action="{{ url()->current() }}"
         method="GET"
+        data-is-seo-filter="{{ isset($seoFilter) ? '1' : '0' }}"
+        data-listing-url="{{ $seoFilterResetUrl ?? url()->current() }}"
         data-base-attribute="{{ $seoFilterBaseFilters['attribute'] ?? '' }}"
         data-base-manufacturers="{{ $seoFilterBaseFilters['manufacturers'] ?? '' }}"
         data-base-has-discount="{{ $seoFilterBaseFilters['has_discount'] ?? '' }}"

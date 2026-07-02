@@ -180,28 +180,40 @@ class QueryStringFilter
     {
         $groups = AttributeFilterCodec::normalize($attributeFilters);
 
-        foreach ($groups as $index => $value) {
-            $attributeId = (int) $index;
-            $valueIds = collect((array) $value)
+        foreach ($groups as $attributeId => $valueIds) {
+            $attributeId = (int) $attributeId;
+
+            $valueIds = collect((array) $valueIds)
                 ->filter(fn ($id) => is_numeric($id))
                 ->map(fn ($id) => (int) $id)
                 ->unique()
-                ->values();
+                ->values()
+                ->all();
 
-            if ($attributeId < 1 || $valueIds->isEmpty()) {
+            if ($attributeId < 1 || empty($valueIds)) {
                 continue;
             }
 
-            $alias = "pa_{$attributeId}";
-
-            $query->join("product_attributes as {$alias}", 'products.id', '=', "{$alias}.product_id")
-                ->where("{$alias}.attribute_id", $attributeId)
-                ->whereExists(function ($subQuery) use ($alias, $valueIds) {
-                    $subQuery->selectRaw(1)
-                        ->from('product_attribute_values')
-                        ->whereColumn("{$alias}.id", 'product_attribute_values.product_attribute_id')
-                        ->whereIn('product_attribute_values.attribute_value_id', $valueIds->all());
-                });
+            $query->whereExists(function ($attributeQuery) use ($attributeId, $valueIds) {
+                $attributeQuery
+                    ->selectRaw(1)
+                    ->from('product_attributes')
+                    ->whereColumn('product_attributes.product_id', 'products.id')
+                    ->where('product_attributes.attribute_id', $attributeId)
+                    ->whereExists(function ($valueQuery) use ($valueIds) {
+                        $valueQuery
+                            ->selectRaw(1)
+                            ->from('product_attribute_values')
+                            ->whereColumn(
+                                'product_attribute_values.product_attribute_id',
+                                'product_attributes.id'
+                            )
+                            ->whereIn(
+                                'product_attribute_values.attribute_value_id',
+                                $valueIds
+                            );
+                    });
+            });
         }
     }
 

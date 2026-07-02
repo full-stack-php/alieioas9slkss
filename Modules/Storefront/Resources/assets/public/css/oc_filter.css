@@ -487,15 +487,7 @@
     will-change: transform, opacity;
     pointer-events: auto;
 }
-#column-left:has(.ocf-popover.show),
-#column-left:has(.ocf-popover.ocf-in) {
-    z-index: 9998;
-}
 
-.oc-filter-box:has(.ocf-popover.show),
-.oc-filter-box:has(.ocf-popover.ocf-in) {
-    z-index: 9999;
-}
 
 .ocf-popover.show,
 .ocf-popover.ocf-in {

@@ -35,7 +35,10 @@ trait ProductSearch
 //            $productIds = (clone $query)->select('products.id')->resetOrders()->pluck('id');
 //        }
 
-        $products = $query->paginate(request('perPage', 30));
+        $products = $query
+            ->select('products.*')
+            ->distinct('products.id')
+            ->paginate(request('perPage', 30));
 
         event(new ShowingProductList($products));
 
@@ -68,7 +71,10 @@ trait ProductSearch
             $productIds = (clone $query)->select('products.id')->resetOrders()->pluck('id');
         }
 
-        $products = $query->paginate(request('perPage', 15));
+        $products = $query
+            ->select('products.*')
+            ->distinct('products.id')
+            ->paginate(request('perPage', 15));
 
         event(new ShowingProductList($products));
 

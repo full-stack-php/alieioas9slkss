@@ -29,8 +29,11 @@ class ProductFilterComposer
         $attributes = $this->attributes($view);
         $selectedAttributeFilters = AttributeFilterCodec::normalize(request('attribute'));
 
-        $this->appendAttributeCounts($attributes);
         $this->appendAttributeSelections($attributes, $selectedAttributeFilters);
+        $this->appendAttributeBaseCounts($attributes);
+        $this->appendAttributeCounts($attributes);
+
+        $attributes = $this->filterVisibleAttributes($attributes);
 
         $manufacturers = $this->manufacturers();
         $this->appendManufacturerSelections($manufacturers);
@@ -91,10 +94,29 @@ class ProductFilterComposer
 
     private function manufacturerCount(int $manufacturerId): int
     {
-        $filters = $this->filtersExcept(['manufacturers', 'manufacturer']);
-        $filters['manufacturers'] = ManufacturerFilterCodec::encode([$manufacturerId]);
+        $filters = request()->query();
 
-        return $this->countProducts($this->queryForFilters($filters));
+        $manufacturerIds = ManufacturerFilterCodec::normalize(
+            $filters['manufacturers'] ?? $filters['manufacturer'] ?? null
+        );
+
+        unset($filters['manufacturer']);
+
+        if (!in_array($manufacturerId, $manufacturerIds, true)) {
+            $manufacturerIds[] = $manufacturerId;
+        }
+
+        $manufacturerToken = ManufacturerFilterCodec::encode($manufacturerIds);
+
+        if ($manufacturerToken === '') {
+            unset($filters['manufacturers']);
+        } else {
+            $filters['manufacturers'] = $manufacturerToken;
+        }
+
+        return $this->countProducts(
+            $this->queryForFilters($filters)
+        );
     }
 
     private function discountCount(): int
@@ -166,14 +188,54 @@ class ProductFilterComposer
 
     private function attributeValueCount(int $attributeId, int $valueId, ?string $attributeSlug = null): int
     {
-        $filters = $this->filtersExceptAttribute($attributeId, $attributeSlug);
+        $filters = request()->query();
 
-        $groups = AttributeFilterCodec::normalize($filters['attribute'] ?? null);
-        $groups[$attributeId] = [$valueId];
+        $groups = AttributeFilterCodec::normalize(
+            $filters['attribute'] ?? $filters['attributes'] ?? null
+        );
 
-        $filters['attribute'] = AttributeFilterCodec::encode($groups);
+        unset($filters['attributes']);
 
-        return $this->countProducts($this->queryForFilters($filters));
+        $selectedValueIds = collect($groups[$attributeId] ?? [])
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        /*
+         * Если значение еще не выбрано — считаем результат,
+         * как если бы пользователь его добавил.
+         *
+         * Например:
+         * сейчас: Объем = 10 ml
+         * считаем 15 ml:
+         * Объем = 10 ml OR 15 ml
+         */
+        if (!$selectedValueIds->contains($valueId)) {
+            $selectedValueIds->push($valueId);
+        }
+
+        $selectedValueIds = $selectedValueIds
+            ->unique()
+            ->sort()
+            ->values();
+
+        if ($selectedValueIds->isEmpty()) {
+            unset($groups[$attributeId]);
+        } else {
+            $groups[$attributeId] = $selectedValueIds->all();
+        }
+
+        $attributeToken = AttributeFilterCodec::encode($groups);
+
+        if ($attributeToken === '') {
+            unset($filters['attribute']);
+        } else {
+            $filters['attribute'] = $attributeToken;
+        }
+
+        return $this->countProducts(
+            $this->queryForFilters($filters)
+        );
     }
 
     private function priceRange(): array
@@ -362,5 +424,50 @@ class ProductFilterComposer
         return ManufacturerFilterCodec::normalize(
             request('manufacturers', request('manufacturer', []))
         );
+    }
+
+    private function appendAttributeBaseCounts($attributes): void
+    {
+        foreach ($attributes as $attribute) {
+            foreach ($attribute->values as $value) {
+                $value->base_filter_count = $this->attributeValueBaseCount(
+                    (int) $attribute->id,
+                    (int) $value->id
+                );
+
+                $value->is_filter_visible = $value->base_filter_count > 0
+                    || ($value->is_filter_selected ?? false);
+            }
+        }
+    }
+
+    private function attributeValueBaseCount(int $attributeId, int $valueId): int
+    {
+        $filters = $this->baseContextFilters();
+
+        $filters['attribute'] = AttributeFilterCodec::encode([
+            $attributeId => [$valueId],
+        ]);
+
+        return $this->countProducts(
+            $this->queryForFilters($filters)
+        );
+    }
+
+    private function filterVisibleAttributes($attributes)
+    {
+        return $attributes
+            ->map(function ($attribute) {
+                $attribute->setRelation(
+                    'values',
+                    $attribute->values
+                        ->filter(fn ($value) => (bool) ($value->is_filter_visible ?? false))
+                        ->values()
+                );
+
+                return $attribute;
+            })
+            ->filter(fn ($attribute) => $attribute->values->isNotEmpty())
+            ->values();
     }
 }

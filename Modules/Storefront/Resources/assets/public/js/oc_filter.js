@@ -50,6 +50,32 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     };
 
+    const isSeoFilterPage = () => {
+        const form = getForm();
+
+        return form?.dataset.isSeoFilter === '1';
+    };
+
+    const getListingUrl = () => {
+        const form = getForm();
+
+        return form?.dataset.listingUrl || window.location.href;
+    };
+
+    const getDiscountToken = (formData) => {
+        return formData.has('has_discount') || formData.has('specials') ? '1' : '';
+    };
+
+    const shouldLeaveSeoFilterUrl = (baseFilters, attributeToken, manufacturerToken, discountToken) => {
+        if (!isSeoFilterPage()) {
+            return false;
+        }
+
+        return attributeToken !== baseFilters.attribute
+            || manufacturerToken !== baseFilters.manufacturers
+            || discountToken !== baseFilters.hasDiscount;
+    };
+
     const getPriceDefaults = () => {
         const slider = filterBox.querySelector('.js-price-slider');
 
@@ -156,9 +182,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const buildUrl = () => {
         const form = getForm();
-        const url = new URL(window.location.href);
-        const params = new URLSearchParams(url.search);
         const formData = new FormData(form);
+        const baseFilters = getBaseFilters();
+
+        const attributeToken = buildAttributeToken();
+        const manufacturerToken = buildManufacturerToken();
+        const discountToken = getDiscountToken(formData);
+
+        /*
+         * На SEO-посадочной разрешаем оставаться на /test только если
+         * изменили цену.
+         *
+         * Если изменился attribute / manufacturers / has_discount —
+         * уходим на обычную категорию и отдаем полный query string.
+         */
+        const shouldLeaveLanding = shouldLeaveSeoFilterUrl(
+            baseFilters,
+            attributeToken,
+            manufacturerToken,
+            discountToken
+        );
+
+        const url = new URL(
+            shouldLeaveLanding ? getListingUrl() : window.location.href
+        );
+
+        const params = new URLSearchParams(url.search);
 
         cleanParams(params);
 
@@ -182,6 +231,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 continue;
             }
 
+            if (
+                key === 'has_discount' ||
+                key === 'specials'
+            ) {
+                continue;
+            }
+
             if (key === 'price[min]' || key === 'price[max]') {
                 if (shouldAppendPrice(key, value)) {
                     params.append(key, value);
@@ -195,18 +251,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const baseFilters = getBaseFilters();
-
-        const attributeToken = buildAttributeToken();
-
-        if (attributeToken !== '' && attributeToken !== baseFilters.attribute) {
+        if (
+            attributeToken !== '' &&
+            (shouldLeaveLanding || attributeToken !== baseFilters.attribute)
+        ) {
             params.set('attribute', attributeToken);
         }
 
-        const manufacturerToken = buildManufacturerToken();
-
-        if (manufacturerToken !== '' && manufacturerToken !== baseFilters.manufacturers) {
+        if (
+            manufacturerToken !== '' &&
+            (shouldLeaveLanding || manufacturerToken !== baseFilters.manufacturers)
+        ) {
             params.set('manufacturers', manufacturerToken);
+        }
+
+        if (
+            discountToken !== '' &&
+            (shouldLeaveLanding || discountToken !== baseFilters.hasDiscount)
+        ) {
+            params.set('has_discount', discountToken);
         }
 
         url.search = params.toString();
