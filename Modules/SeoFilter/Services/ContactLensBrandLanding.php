@@ -7,6 +7,7 @@ use Illuminate\Support\Arr;
 use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use Modules\Brand\Entities\Brand;
 use Modules\Category\Entities\Category;
+use Modules\Category\Services\CategoryDescendantIds;
 use Modules\Product\Entities\Product;
 use Modules\Product\Filters\ManufacturerFilterCodec;
 
