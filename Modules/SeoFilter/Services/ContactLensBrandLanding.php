@@ -26,6 +26,7 @@ class ContactLensBrandLanding
         'sort',
         'query',
         'search',
+        'category',
     ];
 
     public function category(): ?Category
@@ -93,7 +94,7 @@ class ContactLensBrandLanding
     {
         return LaravelLocalization::getLocalizedURL(
             LaravelLocalization::getCurrentLocale(),
-            route('brands.products.index', $brand->slug)
+            url('brands/' . trim($brand->slug, '/') . '/')
         );
     }
 

@@ -32,16 +32,16 @@ class CategoryProductController
         SeoRobots $seoRobots,
         ContactLensBrandLanding $contactLensBrandLanding
     ) {
-        request()->merge(['category' => $slug]);
-
         $category = Category::findBySlug($slug);
 
-        // Should be removed
+// Should be removed
         if ($contactLensBrandLanding->shouldRedirectCategoryToBrand($category, request())) {
             $brand = $contactLensBrandLanding->brandFromManufacturerOnlyRequest(request());
 
             return redirect()->to($contactLensBrandLanding->brandUrl($brand), 302);
         }
+
+        request()->merge(['category' => $slug]);
 
         $seoFilter = $seoFilterMatcher->findByRequest($category);
 

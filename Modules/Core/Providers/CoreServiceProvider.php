@@ -42,6 +42,7 @@ class CoreServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->setupSupportedLocales();
+        $this->setupLocaleUrlMapping();
         $this->registerSetting();
         $this->setupAppLocale();
         $this->setupAppCacheDriver();
@@ -219,5 +220,13 @@ class CoreServiceProvider extends ServiceProvider
             : 1;
 
         $this->app['inAdminPanel'] = $this->app['request']->segment($index) === 'admin';
+    }
+
+    private function setupLocaleUrlMapping(): void
+    {
+        $mapping = $this->app['config']->get('laravellocalization.localesMapping', []);
+        $mapping['uk'] = 'ua';
+
+        $this->app['config']->set('laravellocalization.localesMapping', $mapping);
     }
 }
