@@ -46,7 +46,6 @@
     margin-bottom: 18px;
     padding: 16px 16px 18px;
     background: #fff;
-    border: 1px solid var(--oc-filter-border);
     border-radius: 10px;
 }
 
@@ -278,8 +277,7 @@
 }
 
 .oc-filter-box .filter-section:has(.form-check-input:checked) {
-    border-color: #f3e2cd;
-    background-color: #fff8f0;
+    background-color: var(--color-primary-light-8);
 }
 
 .oc-filter-box .filter-section:has(.form-check-input:checked) h6 {
@@ -326,7 +324,6 @@
 @media (min-width: 768px) {
     .oc-filter-box {
         position: sticky;
-        top: 20px;
     }
 
     .oc-filter-box .filter-section {

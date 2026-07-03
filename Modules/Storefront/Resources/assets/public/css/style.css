@@ -7656,6 +7656,12 @@ footer .gmap iframe {
     padding: 6px;
     border-radius: 8px;
 }
+@media (max-width: 600px) {
+    .box-wrap{
+        margin-right: calc(var(--bs-gutter-x) * .5);
+        width: calc(50% - calc(var(--bs-gutter-x) * .5));
+    }
+}
 .btn-view {
     background: transparent;
     border: 0px;
