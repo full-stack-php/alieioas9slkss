@@ -7,6 +7,7 @@ use Modules\Product\Entities\Product;
 use Modules\Category\Entities\Category;
 use Modules\Product\Filters\ProductFilter;
 use Modules\Product\Http\Controllers\ProductSearch;
+use Modules\SeoFilter\Services\ContactLensBrandLanding;
 use Modules\SeoFilter\Services\SeoRobots;
 use Modules\SeoFilter\Services\SeoFilterMatcher;
 
@@ -16,7 +17,7 @@ class CategoryProductController
 
     /**
      * Display a listing of the resource.
-     *
+     * remove class after update ContactLensBrandLanding
      * @param string $slug
      * @param Product $model
      * @param ProductFilter $productFilter
@@ -28,11 +29,19 @@ class CategoryProductController
         Product $model,
         ProductFilter $productFilter,
         SeoFilterMatcher $seoFilterMatcher,
-        SeoRobots $seoRobots
+        SeoRobots $seoRobots,
+        ContactLensBrandLanding $contactLensBrandLanding
     ) {
         request()->merge(['category' => $slug]);
 
         $category = Category::findBySlug($slug);
+
+        // Should be removed
+        if ($contactLensBrandLanding->shouldRedirectCategoryToBrand($category, request())) {
+            $brand = $contactLensBrandLanding->brandFromManufacturerOnlyRequest(request());
+
+            return redirect()->to($contactLensBrandLanding->brandUrl($brand), 302);
+        }
 
         $seoFilter = $seoFilterMatcher->findByRequest($category);
 

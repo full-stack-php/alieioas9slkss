@@ -103,6 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return form?.dataset.isSeoFilter === '1';
     };
 
+    const isBrandLandingPage = () => {
+        const form = getForm();
+
+        return form?.dataset.isBrandLanding === '1';
+    };
+
     const getListingUrl = () => {
         const form = getForm();
 
@@ -227,6 +233,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return token;
     };
 
+    const shouldLeaveBrandLandingUrl = (
+        baseFilters,
+        attributeToken,
+        manufacturerToken,
+        discountToken,
+        priceChanged
+    ) => {
+        if (!isBrandLandingPage()) {
+            return false;
+        }
+
+        return priceChanged
+            || attributeToken !== baseFilters.attribute
+            || manufacturerToken !== baseFilters.manufacturers
+            || discountToken !== baseFilters.hasDiscount;
+    };
+
     const buildUrl = () => {
         const form = getForm();
         const formData = new FormData(form);
@@ -236,18 +259,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const manufacturerToken = buildManufacturerToken();
         const discountToken = getDiscountToken(formData);
 
-        /*
-         * На SEO-посадочной разрешаем оставаться на /test только если
-         * изменили цену.
-         *
-         * Если изменился attribute / manufacturers / has_discount —
-         * уходим на обычную категорию и отдаем полный query string.
-         */
+        const priceChanged = ['price[min]', 'price[max]'].some((key) => {
+            return formData.has(key) && shouldAppendPrice(key, formData.get(key));
+        });
+
         const shouldLeaveLanding = shouldLeaveSeoFilterUrl(
             baseFilters,
             attributeToken,
             manufacturerToken,
             discountToken
+        ) || shouldLeaveBrandLandingUrl(
+            baseFilters,
+            attributeToken,
+            manufacturerToken,
+            discountToken,
+            priceChanged
         );
 
         const url = new URL(

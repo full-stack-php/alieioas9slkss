@@ -20,12 +20,13 @@
         action="{{ url()->current() }}"
         method="GET"
         data-is-seo-filter="{{ isset($seoFilter) ? '1' : '0' }}"
-        data-listing-url="{{ $seoFilterResetUrl ?? url()->current() }}"
-        data-base-attribute="{{ $seoFilterBaseFilters['attribute'] ?? '' }}"
-        data-base-manufacturers="{{ $seoFilterBaseFilters['manufacturers'] ?? '' }}"
-        data-base-has-discount="{{ $seoFilterBaseFilters['has_discount'] ?? '' }}"
-        data-base-price-min="{{ $seoFilterBaseFilters['price_min'] ?? '' }}"
-        data-base-price-max="{{ $seoFilterBaseFilters['price_max'] ?? '' }}"
+        data-is-brand-landing="{{ isset($brandLandingSeo) ? '1' : '0' }}"
+        data-listing-url="{{ $brandLandingResetUrl ?? $seoFilterResetUrl ?? url()->current() }}"
+        data-base-attribute="{{ $brandLandingBaseFilters['attribute'] ?? $seoFilterBaseFilters['attribute'] ?? '' }}"
+        data-base-manufacturers="{{ $brandLandingBaseFilters['manufacturers'] ?? $seoFilterBaseFilters['manufacturers'] ?? '' }}"
+        data-base-has-discount="{{ $brandLandingBaseFilters['has_discount'] ?? $seoFilterBaseFilters['has_discount'] ?? '' }}"
+        data-base-price-min="{{ $brandLandingBaseFilters['price_min'] ?? $seoFilterBaseFilters['price_min'] ?? '' }}"
+        data-base-price-max="{{ $brandLandingBaseFilters['price_max'] ?? $seoFilterBaseFilters['price_max'] ?? '' }}"
     >
         @if(request('query'))
             <input type="hidden" name="query" value="{{ request('query') }}">
@@ -163,7 +164,7 @@
             </button>
 
             @if($filterHasActiveFilters)
-                <a href="{{ $seoFilterResetUrl ?? url()->current() }}" class="btn btn-light w-100 mt-2">
+                <a href="{{ $brandLandingResetUrl ?? $seoFilterResetUrl ?? url()->current() }}" class="btn btn-light w-100 mt-2">
                     Сбросить
                 </a>
             @endif

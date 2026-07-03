@@ -8,6 +8,7 @@ use Modules\Attribute\Entities\Attribute;
 use Modules\Attribute\Entities\AttributeValue;
 use Modules\Category\Entities\Category;
 use Modules\Support\Money;
+use Modules\Category\Services\CategoryDescendantIds;
 
 class QueryStringFilter
 {
@@ -162,16 +163,17 @@ class QueryStringFilter
 
     public function category($query, $slug): void
     {
-        $categoryId = Category::where('slug', $slug)->value('id');
+        $categoryIds = app(CategoryDescendantIds::class)->bySlug((string) $slug);
 
-        if (!$categoryId) {
+        if (empty($categoryIds)) {
             return;
         }
 
-        $query->where(function ($categoryQuery) use ($slug, $categoryId) {
-            $categoryQuery->where('products.main_category_id', $categoryId)
-                ->orWhereHas('categories', function ($q) use ($slug) {
-                    $q->where('slug', $slug);
+        $query->where(function ($categoryQuery) use ($categoryIds) {
+            $categoryQuery
+                ->whereIn('products.main_category_id', $categoryIds)
+                ->orWhereHas('categories', function ($q) use ($categoryIds) {
+                    $q->whereIn('categories.id', $categoryIds);
                 });
         });
     }

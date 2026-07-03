@@ -1,15 +1,32 @@
 @extends('storefront::public.layout')
 @use('Spatie\SchemaOrg\Schema')
-@section('title', isset($seoFilter) && filled($seoFilter->meta_title) ? $seoFilter->meta_title : ($category->meta->meta_title ?: $category->name))
+
+@php
+    $listingMetaTitle = $brandLandingSeo['meta_title']
+        ?? (isset($seoFilter) && filled($seoFilter->meta_title) ? $seoFilter->meta_title : ($category->meta->meta_title ?: $category->name));
+
+    $listingMetaDescription = $brandLandingSeo['meta_description']
+        ?? (isset($seoFilter) && filled($seoFilter->meta_description) ? $seoFilter->meta_description : $category->meta->meta_description);
+
+    $listingH1 = $brandLandingSeo['h1']
+        ?? ($seoFilter->h1 ?? $category->h1_name ?? $category->name);
+
+    $listingDescription = $brandLandingSeo['description']
+        ?? (isset($seoFilter) && filled($seoFilter->description) ? $seoFilter->description : null);
+
+    $listingImage = $brandLandingSeo['image'] ?? $category->logo->path;
+@endphp
+
+@section('title', $listingMetaTitle)
 
 @push('meta')
-    <meta name="title" content="{{ isset($seoFilter) && filled($seoFilter->meta_title) ? $seoFilter->meta_title : ($category->meta->meta_title ?: $category->name) }}">
-    <meta name="description" content="{{ isset($seoFilter) && filled($seoFilter->meta_description) ? $seoFilter->meta_description : $category->meta->meta_description }}">
+    <meta name="title" content="{{ $listingMetaTitle }}">
+    <meta name="description" content="{{ $listingMetaDescription }}">
     <meta name="twitter:card" content="summary">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:title" content="{{ isset($seoFilter) && filled($seoFilter->meta_title) ? $seoFilter->meta_title : ($category->meta->meta_title ?: $category->name) }}">
-    <meta property="og:description" content="{{ isset($seoFilter) && filled($seoFilter->meta_description) ? $seoFilter->meta_description : $category->meta->meta_description }}">
-    <meta property="og:image" content="{{ $category->logo->path }}">
+    <meta property="og:title" content="{{ $listingMetaTitle }}">
+    <meta property="og:description" content="{{ $listingMetaDescription }}">
+    <meta property="og:image" content="{{ $listingImage }}">
     <meta property="og:locale" content="{{ locale() }}">
 
     @foreach (supported_locale_keys() as $code)
@@ -28,7 +45,7 @@
 
             <div class="row">
                 <div class="col-xs-12 col-sm-12" id="listing-heading">
-                    <h1>{{ $seoFilter->h1 ?? $category->h1_name ?? $category->name }}</h1>
+                    <h1>{{ $listingH1 }}</h1>
                 </div>
 
                 <div class="sub-categories">
@@ -166,11 +183,11 @@
                 @endif
 
             <div id="listing-seo-content">
-                @if(isset($seoFilter) && filled($seoFilter->description))
+                @if(filled($listingDescription))
                     <div class="row mt-5">
                         <div class="col-12">
                             <div class="p-content">
-                                {!! $seoFilter->description !!}
+                                {!! $listingDescription !!}
                             </div>
                         </div>
                     </div>
