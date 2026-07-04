@@ -177,6 +177,7 @@
                                 <select name="status_code" class="form-select">
                                     <option value="">{{ trans('redirect::redirects.filters.all') }}</option>
                                     <option value="301">301</option>
+                                    <option value="302">302</option>
                                 </select>
                             </div>
 

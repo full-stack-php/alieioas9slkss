@@ -45,12 +45,12 @@ class SaveRedirectRequest extends Request
 
     protected function prepareForValidation()
     {
+        $statusCode = (int) $this->get('status_code');
+
         $this->merge([
             'old_url' => RedirectUrl::normalizeOldUrl($this->get('old_url')),
             'new_url' => RedirectUrl::normalizeNewUrl($this->get('new_url')),
-            'status_code' => 301,'status_code' => in_array((int) $this->get('status_code'), [301, 302], true)
-                ? (int) $this->get('status_code')
-                : 301,
+            'status_code' => in_array($statusCode, [301, 302], true) ? $statusCode : 301,
             'is_active' => $this->has('is_active') ? $this->get('is_active') === 'on' : false,
             'force_save' => $this->has('force_save') ? $this->get('force_save') === 'on' : false,
         ]);
