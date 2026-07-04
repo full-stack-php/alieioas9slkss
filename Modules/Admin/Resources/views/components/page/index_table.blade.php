@@ -8,11 +8,17 @@
             @endif
         </div>
     </div>
+
+    @if (isset($modal))
+        {{ $modal }}
+    @endif
+
 @endsection
 
 @isset($name)
     @push('scripts')
         <script type="module">
+
             @isset($resource)
                 DataTable.set('#{{ $resource }}-table .table', {
                     routePrefix: '{{ str_replace('_', '/', $resource) }}',
@@ -21,7 +27,8 @@
                         create: 'create',
                         edit: 'edit',
                         destroy: 'destroy',
-                    }
+                    },
+                    customActions: @json($customActions ?? [])
                 });
             @endisset
         </script>

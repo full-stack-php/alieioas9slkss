@@ -1,0 +1,11 @@
+{
+    "name": "Redirect",
+    "alias": "redirect",
+    "description": "The redirect module is responsible for managing redirects.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Redirect\\Providers\\RedirectServiceProvider"
+    ],
+    "files": []
+}

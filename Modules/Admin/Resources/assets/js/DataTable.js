@@ -4,7 +4,7 @@ import {Modal} from 'bootstrap';
 import axios from 'axios';
 
 // Initialize state holders.
-Korf.dataTable = { routePrefix: {}, routes: {}, selected: {} };
+Korf.dataTable = { routePrefix: {}, routes: {}, selected: {}, customActions: {} };
 
 let table = null;
 
@@ -104,6 +104,8 @@ export default class {
                             createButton.on('click', () => window.open(this.route("create", {}), '_self'))
                         }
 
+                        this.addTableCustomActions();
+
                         if (this.hasRoute("show") || this.hasRoute("edit")) {
                             this.onRowClick(this.redirectToRowPage);
                         }
@@ -159,6 +161,90 @@ export default class {
         return $(button).prependTo(
             this.element.closest(".dt-container").find(".dt-search")
         );
+    }
+
+    addTableCustomActions() {
+        let actions = Korf.dataTable.customActions[this.selector] || [];
+
+        actions.forEach((action) => {
+            this.addTableCustomAction(action);
+        });
+    }
+
+    addTableCustomAction(action) {
+        let button = `
+        <button type="${this.escapeAttr(action.type || 'button')}" ${this.renderHtmlAttributes(this.customActionAttributes(action))}>
+            ${this.renderCustomActionIcon(action)}
+            <span>${this.escapeHtml(action.label || '')}</span>
+        </button>
+    `;
+
+        let container = this.element
+            .closest(".dt-container")
+            .find(action.container || ".dt-search");
+
+        let element = $(button);
+
+        if (action.placement === "append") {
+            return element.appendTo(container);
+        }
+
+        return element.prependTo(container);
+    }
+
+    customActionAttributes(action) {
+        let attributes = _.merge(
+            {
+                class: action.class || "btn btn-soft-primary",
+            },
+            action.attributes || {}
+        );
+
+        if (action.id) {
+            attributes.id = action.id;
+        }
+
+        if (action.title) {
+            attributes.title = action.title;
+        }
+
+        return attributes;
+    }
+
+    renderHtmlAttributes(attributes) {
+        return Object.entries(attributes)
+            .filter(([key, value]) => value !== undefined && value !== null && value !== false)
+            .map(([key, value]) => {
+                if (value === true) {
+                    return this.escapeAttr(key);
+                }
+
+                return `${this.escapeAttr(key)}="${this.escapeAttr(value)}"`;
+            })
+            .join(" ");
+    }
+
+    renderCustomActionIcon(action) {
+        if (!action.icon) {
+            return "";
+        }
+
+        return action.icon;
+    }
+
+    escapeAttr(value) {
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+    }
+
+    escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
     }
 
     deleteRows() {
@@ -363,9 +449,10 @@ export default class {
         return Korf.dataTable.routes[this.selector][name] !== undefined;
     }
 
-    static set(selector, { routePrefix = null, routes = {} }) {
+    static set(selector, { routePrefix = null, routes = {}, customActions = [] }) {
         Korf.dataTable.routePrefix[selector] = routePrefix;
         Korf.dataTable.routes[selector] = routes;
+        Korf.dataTable.customActions[selector] = customActions;
     }
 
     static setSelectedIds(selector, selected) {
