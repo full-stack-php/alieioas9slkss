@@ -13,7 +13,7 @@
         $redirectCustomActions[] = [
             'id' => 'import-redirects-button',
             'label' => trans('redirect::redirects.import.button'),
-            'class' => 'btn btn-soft-primary',
+            'class' => 'btn btn-soft-primary me-2',
             'placement' => 'prepend',
             'container' => '.dt-search',
             'icon' => '<svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentColor" d="M11 15h2V9h3l-4-5l-4 5h3zm-4 4h10v-2H7zm12 2H5a2 2 0 0 1-2-2V5h2v14h14V5h2v14a2 2 0 0 1-2 2"/></svg>',
@@ -28,7 +28,7 @@
         $redirectCustomActions[] = [
             'id' => 'export-redirects-button',
             'label' => trans('redirect::redirects.export.button'),
-            'class' => 'btn btn-soft-info',
+            'class' => 'btn btn-soft-info me-2',
             'placement' => 'prepend',
             'container' => '.dt-search',
             'icon' => '<svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentColor" d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7z"/></svg>',
@@ -48,7 +48,7 @@
 
     @slot('filters')
         <div class="row mb-3">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">{{ trans('redirect::redirects.filters.status') }}</label>
                 <select name="status" class="form-select js-filter">
                     <option value="">{{ trans('redirect::redirects.filters.all') }}</option>
@@ -57,15 +57,16 @@
                 </select>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">{{ trans('redirect::redirects.filters.redirect_type') }}</label>
                 <select name="status_code" class="form-select js-filter">
                     <option value="">{{ trans('redirect::redirects.filters.all') }}</option>
                     <option value="301">301</option>
+                    <option value="302">302</option>
                 </select>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">{{ trans('redirect::redirects.filters.page_type') }}</label>
                 <select name="page_type" class="form-select js-filter">
                     <option value="">{{ trans('redirect::redirects.filters.all') }}</option>

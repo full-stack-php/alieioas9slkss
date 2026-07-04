@@ -29,7 +29,9 @@ class Redirect extends Model
         static::saving(function ($redirect) {
             $redirect->old_url = RedirectUrl::normalizeOldUrl($redirect->old_url);
             $redirect->new_url = RedirectUrl::normalizeNewUrl($redirect->new_url);
-            $redirect->status_code = 301;
+            $redirect->status_code = in_array((int) $redirect->status_code, [301, 302], true)
+                ? (int) $redirect->status_code
+                : 301;
             $redirect->page_type = RedirectUrl::detectPageType($redirect->old_url);
         });
 

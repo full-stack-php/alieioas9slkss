@@ -50,7 +50,7 @@ class RedirectsImport
 
                 $redirect->fill([
                     'new_url' => $row['new_url'],
-                    'status_code' => 301,
+                    'status_code' => $row['status_code'],
                     'is_active' => $row['is_active'],
                     'comment' => $row['comment'],
                     'page_type' => RedirectUrl::detectPageType($row['old_url']),
@@ -99,6 +99,12 @@ class RedirectsImport
         $oldUrlIndex = array_search('old_url', $header, true);
         $newUrlIndex = array_search('new_url', $header, true);
         $statusIndex = array_search('status', $header, true);
+        $statusCodeIndex = array_search('status_code', $header, true);
+
+        if ($statusCodeIndex === false) {
+            $statusCodeIndex = array_search('redirect_type', $header, true);
+        }
+
         $commentIndex = array_search('comment', $header, true);
 
         $prepared = [];
@@ -108,6 +114,7 @@ class RedirectsImport
                 'row_number' => $index + 2,
                 'old_url' => RedirectUrl::normalizeOldUrl($row[$oldUrlIndex] ?? ''),
                 'new_url' => RedirectUrl::normalizeNewUrl($row[$newUrlIndex] ?? ''),
+                'status_code' => $this->parseStatusCode($statusCodeIndex !== false ? ($row[$statusCodeIndex] ?? null) : null),
                 'is_active' => $this->parseStatus($statusIndex !== false ? ($row[$statusIndex] ?? null) : null),
                 'comment' => trim((string) ($commentIndex !== false ? ($row[$commentIndex] ?? '') : '')),
             ];
@@ -125,6 +132,7 @@ class RedirectsImport
                 'row_number' => $index + 1,
                 'old_url' => RedirectUrl::normalizeOldUrl($row[1] ?? ''),
                 'new_url' => RedirectUrl::normalizeNewUrl($row[2] ?? ''),
+                'status_code' => $this->parseStatusCode($row[0] ?? null),
                 'is_active' => true,
                 'comment' => '',
             ];
@@ -202,5 +210,16 @@ class RedirectsImport
             'активний',
             'активный',
         ], true);
+    }
+
+    private function parseStatusCode($value): int
+    {
+        $value = trim((string) $value);
+
+        if (preg_match('/\b(301|302)\b/', $value, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return 301;
     }
 }

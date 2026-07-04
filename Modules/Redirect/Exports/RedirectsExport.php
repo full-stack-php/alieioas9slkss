@@ -12,6 +12,10 @@ class RedirectsExport
     {
         $format = $filters['format'] ?? 'xlsx';
 
+        if (!in_array($format, ['xlsx', 'csv'], true)) {
+            $format = 'xlsx';
+        }
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
@@ -47,9 +51,6 @@ class RedirectsExport
 
         $writerType = $format === 'csv' ? 'Csv' : 'Xlsx';
         $extension = $format === 'csv' ? 'csv' : 'xlsx';
-        $contentType = $format === 'csv'
-            ? 'text/csv'
-            : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
         $writer = IOFactory::createWriter($spreadsheet, $writerType);
 
@@ -57,13 +58,20 @@ class RedirectsExport
             $writer->setDelimiter(',');
             $writer->setEnclosure('"');
             $writer->setLineEnding("\r\n");
+            $writer->setUseBOM(true);
         }
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, 'redirects.' . $extension, [
-            'Content-Type' => $contentType,
-        ]);
+        $fileName = 'redirects-' . now()->format('Y-m-d-H-i-s') . '.' . $extension;
+        $filePath = storage_path('app/' . $fileName);
+
+        $writer->save($filePath);
+
+        return response()
+            ->download($filePath, $fileName, [
+                'Content-Type' => $this->contentType($format),
+                'Cache-Control' => 'max-age=0',
+            ])
+            ->deleteFileAfterSend(true);
     }
 
     private function query(array $filters)
@@ -87,5 +95,12 @@ class RedirectsExport
         }
 
         return $query->orderBy('id');
+    }
+
+    private function contentType(string $format): string
+    {
+        return $format === 'csv'
+            ? 'text/csv; charset=UTF-8'
+            : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     }
 }

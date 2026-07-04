@@ -26,7 +26,7 @@ class SaveRedirectRequest extends Request
             ],
             'status_code' => [
                 'required',
-                Rule::in([301]),
+                Rule::in([301, 302]),
             ],
             'is_active' => [
                 'required',
@@ -48,7 +48,9 @@ class SaveRedirectRequest extends Request
         $this->merge([
             'old_url' => RedirectUrl::normalizeOldUrl($this->get('old_url')),
             'new_url' => RedirectUrl::normalizeNewUrl($this->get('new_url')),
-            'status_code' => 301,
+            'status_code' => 301,'status_code' => in_array((int) $this->get('status_code'), [301, 302], true)
+                ? (int) $this->get('status_code')
+                : 301,
             'is_active' => $this->has('is_active') ? $this->get('is_active') === 'on' : false,
             'force_save' => $this->has('force_save') ? $this->get('force_save') === 'on' : false,
         ]);
