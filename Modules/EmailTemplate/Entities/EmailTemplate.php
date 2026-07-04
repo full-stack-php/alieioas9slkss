@@ -36,9 +36,7 @@ class EmailTemplate extends Model
     protected $translatedAttributes = [
         'name',
         'subject',
-        'header',
-        'body',
-        'footer',
+        'content',
     ];
 
     protected $appends = [

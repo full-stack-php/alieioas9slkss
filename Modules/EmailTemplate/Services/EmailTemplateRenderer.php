@@ -7,33 +7,38 @@ use Modules\EmailTemplate\Entities\EmailTemplate;
 
 class EmailTemplateRenderer
 {
-    public function render(EmailTemplate $template, array $data = []): string
+    public function render(EmailTemplate $template, array $data = []): array
     {
-        $translation = $template->translate(locale()) ?: $template->translate(default_locale());
+        $locale = $this->localeFromData($data);
 
+        $translation = $template->translate($locale) ?: $template->translate(default_locale());
+
+        $subject = optional($translation)->subject ?: '';
         $content = optional($translation)->content ?: '';
 
-        return $this->replaceShortcodes($content, $template, $data);
+        return [
+            'subject' => $this->replaceShortcodes($subject, $template, $data),
+            'html' => $this->replaceShortcodes($content, $template, $data),
+        ];
     }
 
-    private function compile(string $content, array $shortcodes): string
+    public function replaceShortcodes(string $content, EmailTemplate $template, array $data = []): string
     {
-        return str_replace(array_keys($shortcodes), array_values($shortcodes), $content);
-    }
-
-    private function wrap(string $header, string $body, string $footer): string
-    {
-        return view('emailtemplate::emails.template', [
-            'header' => $header,
-            'body' => $body,
-            'footer' => $footer,
-        ])->render();
+        return str_replace(
+            array_keys($this->shortcodes($data, $template)),
+            array_values($this->shortcodes($data, $template)),
+            $content
+        );
     }
 
     private function localeFromData(array $data): string
     {
         if (isset($data['order']) && !empty($data['order']->locale)) {
             return $data['order']->locale;
+        }
+
+        if (isset($data['user']) && !empty($data['user']->locale)) {
+            return $data['user']->locale;
         }
 
         return locale();
@@ -64,6 +69,10 @@ class EmailTemplateRenderer
             '{$order_products}' => $order ? $this->orderProducts($order, $template) : '',
 
             '{$reset_url}' => e((string) ($data['reset_url'] ?? '')),
+            '{$activation_url}' => e((string) ($data['activation_url'] ?? '')),
+            '{$review_url}' => e((string) ($data['review_url'] ?? '')),
+            '{$gift_certificate_code}' => e((string) ($data['gift_certificate_code'] ?? '')),
+            '{$transaction_id}' => e((string) ($data['transaction_id'] ?? '')),
 
             '{$store_name}' => e((string) setting('store_name')),
             '{$store_email}' => e((string) setting('store_email')),
@@ -75,6 +84,7 @@ class EmailTemplateRenderer
     {
         return (string) (
             $data['firstname']
+            ?? $data['first_name']
             ?? $order?->customer_first_name
             ?? $user?->first_name
             ?? ''
@@ -85,6 +95,7 @@ class EmailTemplateRenderer
     {
         return (string) (
             $data['lastname']
+            ?? $data['last_name']
             ?? $order?->customer_last_name
             ?? $user?->last_name
             ?? ''
@@ -93,7 +104,13 @@ class EmailTemplateRenderer
 
     private function fullName($order, $user, array $data): string
     {
-        return trim($this->firstName($order, $user, $data) . ' ' . $this->lastName($order, $user, $data));
+        return trim(
+            (string) (
+                $data['fullname']
+                ?? $data['full_name']
+                ?? $this->firstName($order, $user, $data) . ' ' . $this->lastName($order, $user, $data)
+            )
+        );
     }
 
     private function email($order, $user, array $data): string
@@ -149,11 +166,203 @@ class EmailTemplateRenderer
 
     private function orderProducts(Order $order, EmailTemplate $template): string
     {
-        $order->loadMissing('products.product.files');
+        $order->loadMissing([
+            'products.product.files',
+            'products.options.option.translations',
+            'products.options.values.translations',
+            'products.packaging.translations',
+        ]);
 
-        return view('emailtemplate::emails.partials.order_products', [
-            'order' => $order,
-            'template' => $template,
-        ])->render();
+        $rows = '';
+
+        foreach ($order->products as $orderProduct) {
+            $rows .= $this->orderProductRow($orderProduct, $order, $template);
+        }
+
+        return <<<HTML
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-spacing:0;width:100%;border-collapse:collapse">
+                <tbody>
+                    {$rows}
+                </tbody>
+            </table>
+            HTML;
+    }
+
+    private function orderProductRow($orderProduct, Order $order, EmailTemplate $template): string
+    {
+        $imageColumn = $this->orderProductImageColumn($orderProduct, $template);
+        $meta = $this->orderProductMetaHtml($orderProduct, $order);
+        $url = e($this->orderProductUrl($orderProduct));
+        $name = e((string) $orderProduct->name);
+        $sku = e((string) $orderProduct->sku);
+        $qty = e((string) $orderProduct->qty);
+        $total = e($orderProduct->line_total->convert($order->currency, $order->currency_rate)->format($order->currency));
+
+        return <<<HTML
+            <tr>
+                <td align="left" style="padding:20px 0;border-bottom:1px solid #ebe3ff">
+                    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-spacing:0;width:100%">
+                        <tbody>
+                            <tr>
+                                {$imageColumn}
+
+                                <td valign="top" style="padding:0;width:auto">
+                                    <h3 style="Margin:0 0 12px 0;font-family:Poppins,Arial,sans-serif;font-size:18px;font-weight:bold;line-height:24px;color:#022b3a">
+                                        <a href="{$url}" target="_blank" style="color:#022b3a;text-decoration:none">{$name}</a>
+                                    </h3>
+
+                                    <p style="Margin:0 0 6px 0;font-family:Poppins,Arial,sans-serif;font-size:14px;line-height:21px;color:#022b3a">
+                                        <strong>SKU:</strong> {$sku}
+                                    </p>
+
+                                    {$meta}
+
+                                    <p style="Margin:8px 0 0 0;font-family:Poppins,Arial,sans-serif;font-size:14px;line-height:21px;color:#022b3a">
+                                        <strong>Кол.:</strong> {$qty}
+                                    </p>
+
+                                    <p style="Margin:8px 0 0 0;font-family:Poppins,Arial,sans-serif;font-size:14px;line-height:21px;color:#022b3a">
+                                        <strong>Цена:</strong> {$total}
+                                    </p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            HTML;
+    }
+
+    private function orderProductImageColumn($orderProduct, EmailTemplate $template): string
+    {
+        if (!$template->show_product_image) {
+            return '';
+        }
+
+        $image = optional(optional($orderProduct->product)->base_image)->path;
+
+        if (!$image) {
+            return '';
+        }
+
+        $url = e($this->orderProductUrl($orderProduct));
+        $image = e($image);
+        $alt = e((string) $orderProduct->name);
+        $width = (int) $template->product_image_max_width;
+        $height = (int) $template->product_image_max_height;
+
+        return <<<HTML
+            <td valign="top" style="padding:0 20px 0 0;width:{$width}px">
+                <a href="{$url}" target="_blank" style="text-decoration:none">
+                    <img src="{$image}" alt="{$alt}" width="{$width}" style="display:block;border:0;outline:none;text-decoration:none;max-width:{$width}px;max-height:{$height}px;height:auto">
+                </a>
+            </td>
+            HTML;
+    }
+
+    private function orderProductMetaHtml($orderProduct, Order $order): string
+    {
+        $lines = [];
+
+        $packaging = $this->orderProductPackagingText($orderProduct);
+
+        if ($packaging !== '') {
+            $lines[] = $packaging;
+        }
+
+        foreach ($this->orderProductOptionTexts($orderProduct, $order) as $optionText) {
+            $lines[] = $optionText;
+        }
+
+        if (empty($lines)) {
+            return '';
+        }
+
+        $html = '';
+
+        foreach ($lines as $line) {
+            $line = e($line);
+
+            $html .= <<<HTML
+            <p style="Margin:0 0 6px 0;font-family:Poppins,Arial,sans-serif;font-size:14px;line-height:21px;color:#022b3a">
+                {$line}
+            </p>
+            HTML;
+        }
+
+        return $html;
+    }
+
+    private function orderProductPackagingText($orderProduct): string
+    {
+        if (!$orderProduct->hasPackaging()) {
+            return '';
+        }
+
+        $packaging = $orderProduct->packaging;
+
+        $name = trim((string) $packaging->name);
+        $qty = (int) $packaging->qty;
+
+        if ($name === '' && $qty <= 0) {
+            return '';
+        }
+
+        if ($name !== '' && $qty > 0) {
+            return "Упаковка: {$name} ({$qty} шт.)";
+        }
+
+        if ($name !== '') {
+            return "Упаковка: {$name}";
+        }
+
+        return "Упаковка: {$qty} шт.";
+    }
+
+    private function orderProductOptionTexts($orderProduct, Order $order): array
+    {
+        $texts = [];
+
+        foreach ($orderProduct->options as $option) {
+            $optionName = trim((string) $option->name);
+
+            if ($optionName === '') {
+                continue;
+            }
+
+            if ($option->isFieldType() && !empty($option->value)) {
+                $texts[] = "{$optionName}: {$option->value}";
+
+                continue;
+            }
+
+            $values = [];
+
+            foreach ($option->values as $value) {
+                $label = trim((string) $value->label);
+
+                if ($label === '') {
+                    continue;
+                }
+
+                $values[] = $label;
+            }
+
+            if (!empty($values)) {
+                $texts[] = "{$optionName}: " . implode(', ', $values);
+            }
+        }
+
+        return $texts;
+    }
+
+
+    private function orderProductUrl($orderProduct): string
+    {
+        if (!$orderProduct->product) {
+            return url('/');
+        }
+
+        return $orderProduct->url();
     }
 }

@@ -3,7 +3,7 @@
 namespace Modules\EmailTemplate\Http\Requests;
 
 use Illuminate\Validation\Rule;
-use Illuminate\Http\Request;
+use Modules\Core\Http\Requests\Request;
 use Modules\EmailTemplate\Services\EmailTemplateType;
 
 class SaveEmailTemplateRequest extends Request
@@ -51,9 +51,7 @@ class SaveEmailTemplateRequest extends Request
         foreach (supported_locales() as $locale => $language) {
             $attributes["{$locale}.name"] = trans('emailtemplate::attributes.name');
             $attributes["{$locale}.subject"] = trans('emailtemplate::attributes.subject');
-            $attributes["{$locale}.header"] = trans('emailtemplate::attributes.header');
-            $attributes["{$locale}.body"] = trans('emailtemplate::attributes.body');
-            $attributes["{$locale}.footer"] = trans('emailtemplate::attributes.footer');
+            $attributes["{$locale}.content"] = trans('emailtemplate::attributes.content');
         }
 
         return $attributes;
