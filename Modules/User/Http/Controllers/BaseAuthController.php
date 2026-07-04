@@ -16,6 +16,8 @@ use Modules\User\Http\Requests\PasswordResetRequest;
 use Modules\User\Http\Requests\ResetCompleteRequest;
 use Cartalyst\Sentinel\Checkpoints\ThrottlingException;
 use Cartalyst\Sentinel\Checkpoints\NotActivatedException;
+use Modules\EmailTemplate\Services\EmailTemplateType;
+use Modules\EmailTemplate\Services\EmailTemplateMailer;
 
 abstract class BaseAuthController extends Controller
 {
@@ -147,8 +149,23 @@ abstract class BaseAuthController extends Controller
 
         $code = $this->auth->createReminderCode($user);
 
-        Mail::to($user)
-            ->send(new ResetPasswordEmail($user, $this->resetCompleteRoute($user, $code)));
+        $resetUrl = $this->resetCompleteRoute($user, $code);
+
+        $handled = app(EmailTemplateMailer::class)->send(
+            EmailTemplateType::CUSTOMER_PASSWORD_RESET,
+            EmailTemplateType::RECIPIENT_CUSTOMER,
+            $user->email,
+            [
+                'user' => $user,
+                'reset_url' => $resetUrl,
+                'reset_code' => $code,
+            ]
+        );
+
+        if (!$handled) {
+            Mail::to($user)
+                ->send(new ResetPasswordEmail($user, $resetUrl));
+        }
 
         return back()->withSuccess(trans('user::messages.users.check_email_to_reset_password'));
     }

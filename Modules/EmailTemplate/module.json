@@ -1,0 +1,11 @@
+{
+    "name": "EmailTemplate",
+    "alias": "emailtemplate",
+    "description": "The Korf email template module is responsible for managing mail templates.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\EmailTemplate\\Providers\\EmailTemplateServiceProvider"
+    ],
+    "files": []
+}

@@ -6,16 +6,11 @@ use Swift_TransportException;
 use Modules\User\Mail\Welcome;
 use Illuminate\Support\Facades\Mail;
 use Modules\User\Events\CustomerRegistered;
+use Modules\EmailTemplate\Services\EmailTemplateType;
+use Modules\EmailTemplate\Services\EmailTemplateMailer;
 
 class SendWelcomeEmail
 {
-    /**
-     * Handle the event.
-     *
-     * @param CustomerRegistered $event
-     *
-     * @return void
-     */
     public function handle(CustomerRegistered $event)
     {
         try {
@@ -23,8 +18,17 @@ class SendWelcomeEmail
                 return;
             }
 
-            Mail::to($event->user->email)
-                ->send(new Welcome($event->user->first_name));
+            $handled = app(EmailTemplateMailer::class)->send(
+                EmailTemplateType::CUSTOMER_REGISTRATION,
+                EmailTemplateType::RECIPIENT_CUSTOMER,
+                $event->user->email,
+                ['user' => $event->user]
+            );
+
+            if (!$handled) {
+                Mail::to($event->user->email)
+                    ->send(new Welcome($event->user->first_name));
+            }
         } catch (Swift_TransportException $e) {
             //
         }

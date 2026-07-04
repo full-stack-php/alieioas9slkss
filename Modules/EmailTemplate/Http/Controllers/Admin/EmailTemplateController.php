@@ -1,0 +1,49 @@
+<?php
+
+namespace Modules\EmailTemplate\Http\Controllers\Admin;
+
+use Modules\Admin\Traits\HasCrudActions;
+use Illuminate\Http\Request;
+use Modules\Order\Entities\OrderStatus;
+use Modules\EmailTemplate\Entities\EmailTemplate;
+use Modules\EmailTemplate\Services\EmailTemplateType;
+use Modules\EmailTemplate\Http\Requests\SaveEmailTemplateRequest;
+
+class EmailTemplateController
+{
+    use HasCrudActions;
+
+    protected $model = EmailTemplate::class;
+
+    protected $label = 'emailtemplate::email_templates.email_template';
+
+    protected $viewPath = 'emailtemplate::admin.email_templates';
+
+    protected $validation = SaveEmailTemplateRequest::class;
+
+    protected function formData(): array
+    {
+        return [
+            'types' => EmailTemplateType::all(),
+            'recipients' => EmailTemplateType::recipients(),
+            'statusKeys' => ['' => trans('emailtemplate::email_templates.form.any_status')] + OrderStatus::list(),
+            'shortcodes' => EmailTemplateType::shortcodes(),
+        ];
+    }
+
+    public function index(Request $request)
+    {
+        if ($request->has('query')) {
+            return $this->getModel()
+                ->search($request->get('query'))
+                ->query()
+                ->limit($request->get('limit', 10))
+                ->get();
+        }
+
+        return view("{$this->viewPath}.index", [
+            'types' => EmailTemplateType::all(),
+            'recipients' => EmailTemplateType::recipients(),
+        ]);
+    }
+}
