@@ -152,7 +152,10 @@
             routes: {
                 cart_add: '{{ route('cart.items.store') }}',
                 cart_get: '{{ route('cart.get') }}',
-            }
+                login_modal: '{{ route('login.modal') }}',
+            },
+            openLoginModal: @json((bool) session('open_login_modal')),
+            sessionExpiredMessage: @json(session('session_expired_message', trans('user::messages.users.session_expired')))
         }
     };
 </script>

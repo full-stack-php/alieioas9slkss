@@ -784,5 +784,19 @@ document.addEventListener('DOMContentLoaded', function (e) {
             'X-CSRF-TOKEN': csrfToken
         }
     });
+
+    $(document).ajaxError(function (event, xhr) {
+        if (xhr.status !== 419) {
+            return;
+        }
+
+        if (xhr.responseJSON && xhr.responseJSON.redirect) {
+            window.location.href = xhr.responseJSON.redirect;
+
+            return;
+        }
+
+        window.location.href = `${window.Korf.baseUrl}/admin/login`;
+    });
 });
 

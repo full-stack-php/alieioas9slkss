@@ -234,11 +234,28 @@ $(document).on('click', '.back-2level', function () {
 
 
 function initUserPopup() {
-    $(document).on('click', '#login-popup, #login-popup-mob, .i_am_registered', function (e) {
-        e.preventDefault();
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
-        var href = $(this).attr('data-load-url');
+    function showDangerAlert(message) {
+        $('.alert.ch-alert-danger').remove();
 
+        $('body').append(
+            `<div class="alert ch-alert-danger"><img class="warning-icon" src="storage/media/warning-icon.svg"><div class="text-modal-block">${escapeHtml(message)}</div><button type="button" class="close" data-bs-dismiss="alert"><svg class="icon icon-11"><use xlink:href="#cross"></use></svg></button></div>`
+        );
+
+        setTimeout(function () {
+            $('.ch-alert-danger').remove();
+        }, 5000);
+    }
+
+    function openLoginPopup(href) {
         if (!href) {
             return;
         }
@@ -277,7 +294,44 @@ function initUserPopup() {
                 console.log(xhr.responseText);
             }
         });
+    }
+
+    function handleSessionExpired(xhr) {
+        var message = window.Korf?.data?.sessionExpiredMessage;
+
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            message = xhr.responseJSON.message;
+        } else if (xhr.responseJSON && xhr.responseJSON.error) {
+            message = xhr.responseJSON.error;
+        }
+
+        showDangerAlert(message);
+
+        var loginModalUrl = window.Korf?.data?.routes?.login_modal;
+
+        if (xhr.responseJSON && xhr.responseJSON.login_modal_url) {
+            loginModalUrl = xhr.responseJSON.login_modal_url;
+        }
+
+        openLoginPopup(loginModalUrl);
+    }
+
+    $(document).on('click', '#login-popup, #login-popup-mob, .i_am_registered', function (e) {
+        e.preventDefault();
+
+        openLoginPopup($(this).attr('data-load-url'));
     });
+
+    $(document).ajaxError(function (event, xhr) {
+        if (xhr.status === 419 && xhr.responseJSON && xhr.responseJSON.session_expired) {
+            handleSessionExpired(xhr);
+        }
+    });
+
+    if (window.Korf?.data?.openLoginModal) {
+        showDangerAlert(window.Korf.data.sessionExpiredMessage);
+        openLoginPopup(window.Korf.data.routes.login_modal);
+    }
 
     $(document).on('click', '#button-login-popup', function (e) {
         e.preventDefault();
@@ -326,6 +380,10 @@ function initUserPopup() {
             },
 
             error: function (xhr) {
+                if (xhr.status === 419 && xhr.responseJSON && xhr.responseJSON.session_expired) {
+                    return;
+                }
+
                 var message = 'Ошибка авторизации';
 
                 if (xhr.responseJSON && xhr.responseJSON.error) {
@@ -336,13 +394,7 @@ function initUserPopup() {
                     message = Object.values(xhr.responseJSON.errors)[0][0];
                 }
 
-                $('body').append(
-                    `<div class="alert ch-alert-danger"><img class="warning-icon" src="storage/media/warning-icon.svg"><div class="text-modal-block">${message}</div><button type="button" class="close" data-bs-dismiss="alert"><svg class="icon icon-11"><use xlink:href="#cross"></use></svg></button></div>`
-                );
-
-                setTimeout(function () {
-                    $('.ch-alert-danger').remove();
-                }, 3000);
+                showDangerAlert(message);
             }
         });
     });
