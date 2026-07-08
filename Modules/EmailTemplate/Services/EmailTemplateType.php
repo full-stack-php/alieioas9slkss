@@ -13,6 +13,7 @@ class EmailTemplateType
     public const GIFT_CERTIFICATE = 'gift_certificate';
     public const TRANSACTION = 'transaction';
     public const REVIEW = 'review';
+    public const CUSTOMER_QUESTION_ANSWER = 'customer_question_answer';
     public const CONTACT_FORM = 'contact_form';
 
     public const RECIPIENT_CUSTOMER = 'customer';
@@ -30,6 +31,7 @@ class EmailTemplateType
             self::GIFT_CERTIFICATE => trans('emailtemplate::email_templates.types.gift_certificate'),
             self::TRANSACTION => trans('emailtemplate::email_templates.types.transaction'),
             self::REVIEW => trans('emailtemplate::email_templates.types.review'),
+            self::CUSTOMER_QUESTION_ANSWER => trans('emailtemplate::email_templates.types.customer_question_answer'),
             self::CONTACT_FORM => trans('emailtemplate::email_templates.types.contact_form'),
         ];
     }
@@ -54,31 +56,148 @@ class EmailTemplateType
 
     public static function shortcodes(): array
     {
+        return array_values(array_unique(array_merge(...array_values(static::shortcodesByType()))));
+    }
+
+    public static function shortcodesByType(): array
+    {
+        return [
+            self::NEW_ORDER => array_merge(
+                static::customerShortcodes(),
+                static::orderShortcodes(),
+                static::storeShortcodes()
+            ),
+
+            self::ORDER_STATUS => array_merge(
+                static::customerShortcodes(),
+                static::orderShortcodes(),
+                static::storeShortcodes()
+            ),
+
+            self::RETURN_STATUS => array_merge(
+                static::customerShortcodes(),
+                [
+                    '{$return_id}',
+                    '{$return_status}',
+                    '{$return_reason}',
+                    '{$return_comment}',
+                ],
+                static::storeShortcodes()
+            ),
+
+            self::CUSTOMER_REGISTRATION => array_merge(
+                static::customerShortcodes(),
+                static::storeShortcodes()
+            ),
+
+            self::CUSTOMER_ACTIVATION => array_merge(
+                static::customerShortcodes(),
+                [
+                    '{$activation_url}',
+                ],
+                static::storeShortcodes()
+            ),
+
+            self::CUSTOMER_PASSWORD_RESET => array_merge(
+                static::customerShortcodes(),
+                [
+                    '{$reset_url}',
+                ],
+                static::storeShortcodes()
+            ),
+
+            self::GIFT_CERTIFICATE => array_merge(
+                static::customerShortcodes(),
+                [
+                    '{$gift_certificate_code}',
+                    '{$gift_certificate_amount}',
+                    '{$gift_certificate_from}',
+                    '{$gift_certificate_message}',
+                ],
+                static::storeShortcodes()
+            ),
+
+            self::TRANSACTION => array_merge(
+                static::customerShortcodes(),
+                [
+                    '{$transaction_id}',
+                    '{$transaction_amount}',
+                    '{$payment_method}',
+                ],
+                static::storeShortcodes()
+            ),
+
+            self::REVIEW => array_merge(
+                static::customerShortcodes(),
+                [
+                    '{$review_url}',
+                    '{$product_name}',
+                    '{$product_url}',
+                ],
+                static::storeShortcodes()
+            ),
+
+            self::CUSTOMER_QUESTION_ANSWER => array_merge(
+                static::customerShortcodes(),
+                [
+                    '{$question}',
+                    '{$answer}',
+                    '{$product_name}',
+                    '{$product_url}',
+                ],
+                static::storeShortcodes()
+            ),
+
+            self::CONTACT_FORM => array_merge(
+                [
+                    '{$fullname}',
+                    '{$email}',
+                    '{$phone}',
+                    '{$message}',
+                ],
+                static::storeShortcodes()
+            ),
+        ];
+    }
+
+    private static function customerShortcodes(): array
+    {
         return [
             '{$firstname}',
             '{$lastname}',
             '{$fullname}',
             '{$email}',
             '{$phone}',
+        ];
+    }
+
+    private static function orderShortcodes(): array
+    {
+        return [
             '{$order_id}',
+            '{$order_date}',
             '{$order_status}',
             '{$order_total}',
             '{$order_subtotal}',
             '{$order_discount}',
+            '{$shipping_cost}',
             '{$shipping_method}',
             '{$payment_method}',
             '{$billing_address}',
             '{$shipping_address}',
             '{$cart_weight}',
             '{$order_products}',
-            '{$reset_url}',
+        ];
+    }
+
+    private static function storeShortcodes(): array
+    {
+        return [
             '{$store_name}',
             '{$store_email}',
-            '{$site_url}',
-            '{$order_date}',
-            '{$shipping_cost}',
             '{$store_phone}',
             '{$store_address}',
+            '{$site_url}',
         ];
     }
 

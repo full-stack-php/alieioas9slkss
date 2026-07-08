@@ -23,6 +23,7 @@ return [
         'transaction' => 'Транзакции',
         'review' => 'Отзыв',
         'contact_form' => 'Форма связи',
+        'customer_question_answer' => 'Вопрос / ответ клиента',
     ],
 
     'recipients' => [
@@ -34,6 +35,7 @@ return [
         'enable_the_email_template' => 'Включить отправку этого письма',
         'show_product_image' => 'Показывать фото товара в письме',
         'available_shortcodes' => 'Доступные шорткоды',
+        'no_shortcodes' => 'Для выбранного типа письма нет доступных шорткодов',
         'any_status' => 'Любой статус',
     ],
 

@@ -81,6 +81,11 @@ class EmailTemplateRenderer
             '{$gift_certificate_code}' => e((string) ($data['gift_certificate_code'] ?? '')),
             '{$transaction_id}' => e((string) ($data['transaction_id'] ?? '')),
 
+            '{$question}' => e((string) ($data['question'] ?? '')),
+            '{$answer}' => e((string) ($data['answer'] ?? '')),
+            '{$product_name}' => e((string) ($data['product_name'] ?? '')),
+            '{$product_url}' => e((string) ($data['product_url'] ?? '')),
+
             '{$store_name}' => e((string) setting('store_name')),
             '{$store_email}' => e((string) setting('store_email')),
             '{$site_url}' => e(url('/')),

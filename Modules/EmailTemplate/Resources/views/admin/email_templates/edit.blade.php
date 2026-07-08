@@ -19,7 +19,7 @@
         {{ csrf_field() }}
         {{ method_field('put') }}
 
-        {!! $tabs->render(compact('emailTemplate', 'types', 'recipients', 'statusKeys', 'shortcodes')) !!}
+        {!! $tabs->render(compact('emailTemplate', 'types', 'recipients', 'statusKeys', 'shortcodesByType')) !!}
     </form>
 @endsection
 

@@ -17,6 +17,6 @@
     <form method="POST" action="{{ route('admin.email_templates.store') }}" class="form-horizontal" id="email-template-create-form" novalidate>
         {{ csrf_field() }}
 
-        {!! $tabs->render(compact('emailTemplate', 'types', 'recipients', 'statusKeys', 'shortcodes')) !!}
+        {!! $tabs->render(compact('emailTemplate', 'types', 'recipients', 'statusKeys', 'shortcodesByType')) !!}
     </form>
 @endsection
