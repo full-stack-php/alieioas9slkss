@@ -133,6 +133,10 @@ class EmailTemplateType
                     '{$review_url}',
                     '{$product_name}',
                     '{$product_url}',
+                    '{$review_rating}',
+                    '{$review_plus}',
+                    '{$review_minus}',
+                    '{$review_comment}',
                 ],
                 static::storeShortcodes()
             ),

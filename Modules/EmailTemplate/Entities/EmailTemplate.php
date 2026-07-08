@@ -54,6 +54,7 @@ class EmailTemplate extends Model
     {
         return $query
             ->withoutGlobalScope('active')
+            ->where('is_active', true)
             ->where('type', $type)
             ->where('recipient', $recipient)
             ->orderBy('sort_order')

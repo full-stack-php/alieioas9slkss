@@ -6,8 +6,7 @@ use Illuminate\Http\Response;
 use Modules\User\Entities\Role;
 use Modules\User\Entities\User;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Mail;
-use Modules\User\Mail\ResetPasswordEmail;
+use Modules\User\Events\CustomerPasswordResetRequested;
 use Modules\User\Contracts\Authentication;
 use Modules\User\Events\CustomerRegistered;
 use Modules\User\Http\Requests\LoginRequest;
@@ -16,8 +15,6 @@ use Modules\User\Http\Requests\PasswordResetRequest;
 use Modules\User\Http\Requests\ResetCompleteRequest;
 use Cartalyst\Sentinel\Checkpoints\ThrottlingException;
 use Cartalyst\Sentinel\Checkpoints\NotActivatedException;
-use Modules\EmailTemplate\Services\EmailTemplateType;
-use Modules\EmailTemplate\Services\EmailTemplateMailer;
 
 abstract class BaseAuthController extends Controller
 {
@@ -151,21 +148,7 @@ abstract class BaseAuthController extends Controller
 
         $resetUrl = $this->resetCompleteRoute($user, $code);
 
-        $handled = app(EmailTemplateMailer::class)->send(
-            EmailTemplateType::CUSTOMER_PASSWORD_RESET,
-            EmailTemplateType::RECIPIENT_CUSTOMER,
-            $user->email,
-            [
-                'user' => $user,
-                'reset_url' => $resetUrl,
-                'reset_code' => $code,
-            ]
-        );
-
-        if (!$handled) {
-            Mail::to($user)
-                ->send(new ResetPasswordEmail($user, $resetUrl));
-        }
+        event(new CustomerPasswordResetRequested($user, $resetUrl, $code));
 
         return back()->withSuccess(trans('user::messages.users.check_email_to_reset_password'));
     }

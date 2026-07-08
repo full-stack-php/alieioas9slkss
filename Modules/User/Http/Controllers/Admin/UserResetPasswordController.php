@@ -5,8 +5,7 @@ namespace Modules\User\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Modules\User\Entities\User;
-use Illuminate\Support\Facades\Mail;
-use Modules\User\Mail\ResetPasswordEmail;
+use Modules\User\Events\CustomerPasswordResetRequested;
 use Modules\User\Contracts\Authentication;
 
 class UserResetPasswordController
@@ -24,8 +23,11 @@ class UserResetPasswordController
 
         $code = $auth->createReminderCode($user);
 
-        Mail::to($user)
-            ->send(new ResetPasswordEmail($user, $this->getResetCompleteURL($user, $code)));
+        event(new CustomerPasswordResetRequested(
+            $user,
+            $this->getResetCompleteURL($user, $code),
+            $code
+        ));
 
         return redirect()->route('admin.users.index')
             ->withSuccess(trans('user::messages.users.reset_password_email_sent'));

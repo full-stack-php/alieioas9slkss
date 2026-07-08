@@ -5,6 +5,7 @@ namespace Modules\QuestionAnswer\Http\Controllers;
 use Illuminate\Http\Response;
 use Modules\QuestionAnswer\Entities\QuestionAnswer;
 use Modules\Product\Entities\Product;
+use Modules\QuestionAnswer\Events\QuestionAnswerSubmitted;
 use Modules\QuestionAnswer\Http\Requests\StoreQuestionAnswerRequest;
 
 class ProductQuestionAnswerController
@@ -32,15 +33,9 @@ class ProductQuestionAnswerController
      */
     public function store($productId, StoreQuestionAnswerRequest $request)
     {
-//        if (!setting('reviews_enabled')) {
-//            return response()->json([
-//                'success' => false,
-//                'error' => trans('storefront::product.reviews_disabled') ?? 'Отзывы отключены.'
-//            ], 403);
-//        }
 
         try {
-            Product::findOrFail($productId)
+            $questionAnswer = Product::findOrFail($productId)
                 ->questionsanswers()
                 ->create([
                     'asker_id' => auth()->id(),
@@ -49,6 +44,9 @@ class ProductQuestionAnswerController
                     'question' => $request->question,
                     'is_approved' => 0,
                 ]);
+
+            event(new QuestionAnswerSubmitted($questionAnswer));
+
             return response()->json([
                 'success' => true,
                 'message' => trans('review::messages.submitted_for_approval')

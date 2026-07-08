@@ -6,6 +6,7 @@ use Illuminate\Http\Response;
 use Modules\QuestionAnswer\Entities\QuestionAnswer;
 use Modules\Admin\Traits\HasCrudActions;
 use Modules\Admin\Ui\Facades\TabManager;
+use Modules\QuestionAnswer\Events\QuestionAnswerAnswered;
 use Modules\QuestionAnswer\Http\Requests\UpdateQuestionAnswerRequest;
 
 class QuestionAnswerController
@@ -69,9 +70,20 @@ class QuestionAnswerController
     {
         $questionanswer = QuestionAnswer::withoutGlobalScope('approved')->findOrFail($id);
 
+        $oldAnswer = $questionanswer->answer;
+        $wasApproved = $questionanswer->is_approved;
+
         $questionanswer->update($request->except(
             array_merge(array_keys(request()->query()), ['search_terms'])
         ));
+
+        if (
+            $questionanswer->is_approved
+            && !empty($questionanswer->answer)
+            && (!$wasApproved || $oldAnswer !== $questionanswer->answer)
+        ) {
+            event(new QuestionAnswerAnswered($questionanswer));
+        }
 
         return redirect()->route('admin.questions_answers.index');
     }

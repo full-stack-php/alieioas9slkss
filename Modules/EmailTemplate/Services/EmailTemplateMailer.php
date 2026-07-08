@@ -3,14 +3,12 @@
 namespace Modules\EmailTemplate\Services;
 
 use Throwable;
-use Illuminate\Support\Facades\Mail;
-use Modules\EmailTemplate\Mail\TemplateEmail;
+use Modules\EmailTemplate\Jobs\SendEmailTemplate;
 use Modules\EmailTemplate\Entities\EmailTemplate;
 
 class EmailTemplateMailer
 {
     public function __construct(
-        private EmailTemplateRenderer $renderer,
         private EmailTemplateMailLogger $logger
     ) {
     }
@@ -20,24 +18,19 @@ class EmailTemplateMailer
         try {
             $template = $this->findTemplate($type, $recipient, $statusKey);
 
-            if (!$template) {
+            if (!$template || !$template->is_active) {
                 return false;
             }
 
-            if (!$template->is_active) {
-                return true;
-            }
-
-            $rendered = $this->renderer->render($template, $data);
-
-            Mail::to($to)->send(new TemplateEmail(
-                $rendered['subject'],
-                $rendered['html']
-            ));
+            SendEmailTemplate::dispatch(
+                $template->id,
+                $this->normalizeRecipientForQueue($to),
+                $data
+            );
 
             return true;
         } catch (Throwable $exception) {
-            $this->logger->error('Email template mail sending failed.', $exception, [
+            $this->logger->error('Email template queue dispatch failed.', $exception, [
                 'type' => $type,
                 'recipient' => $recipient,
                 'to' => $this->normalizeRecipientForLog($to),
@@ -66,6 +59,19 @@ class EmailTemplateMailer
         return (clone $query)
             ->whereNull('status_key')
             ->first();
+    }
+
+    private function normalizeRecipientForQueue(mixed $to): mixed
+    {
+        if (is_string($to) || is_array($to) || is_null($to)) {
+            return $to;
+        }
+
+        if (is_object($to) && isset($to->email)) {
+            return $to->email;
+        }
+
+        return $to;
     }
 
     private function normalizeRecipientForLog(mixed $to): mixed

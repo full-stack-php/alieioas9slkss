@@ -5,6 +5,7 @@ namespace Modules\Review\Http\Controllers;
 use Illuminate\Http\Response;
 use Modules\Review\Entities\Review;
 use Modules\Product\Entities\Product;
+use Modules\Review\Events\ReviewSubmitted;
 use Modules\Review\Http\Requests\StoreReviewRequest;
 
 class ProductReviewController
@@ -40,7 +41,7 @@ class ProductReviewController
         }
 
         try {
-            Product::findOrFail($productId)
+            $review = Product::findOrFail($productId)
                 ->reviews()
                 ->create([
                     'reviewer_id' => auth()->id(),
@@ -51,6 +52,9 @@ class ProductReviewController
                     'comment' => $request->comment,
                     'is_approved' => 0,
                 ]);
+
+            event(new ReviewSubmitted($review));
+
             return response()->json([
                 'success' => true,
                 'message' => trans('review::messages.submitted_for_approval')
