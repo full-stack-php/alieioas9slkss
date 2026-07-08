@@ -24,9 +24,11 @@ class EmailTemplateRenderer
 
     public function replaceShortcodes(string $content, EmailTemplate $template, array $data = []): string
     {
+        $shortcodes = $this->shortcodes($data, $template);
+
         return str_replace(
-            array_keys($this->shortcodes($data, $template)),
-            array_values($this->shortcodes($data, $template)),
+            array_keys($shortcodes),
+            array_values($shortcodes),
             $content
         );
     }
@@ -68,6 +70,11 @@ class EmailTemplateRenderer
             '{$cart_weight}' => $order ? e($this->cartWeight($order)) : '',
             '{$order_products}' => $order ? $this->orderProducts($order, $template) : '',
 
+            '{$order_date}' => $order && $order->created_at ? e($order->created_at->format('Y/m/d')) : '',
+            '{$shipping_cost}' => $order ? e($order->shipping_cost->convert($order->currency, $order->currency_rate)->format($order->currency)) : '',
+            '{$store_phone}' => e((string) setting('store_phone')),
+            '{$store_address}' => e($this->storeAddress()),
+
             '{$reset_url}' => e((string) ($data['reset_url'] ?? '')),
             '{$activation_url}' => e((string) ($data['activation_url'] ?? '')),
             '{$review_url}' => e((string) ($data['review_url'] ?? '')),
@@ -78,6 +85,16 @@ class EmailTemplateRenderer
             '{$store_email}' => e((string) setting('store_email')),
             '{$site_url}' => e(url('/')),
         ];
+    }
+
+    private function storeAddress(): string
+    {
+        return collect([
+            setting('store_address_1'),
+            setting('store_address_2'),
+            setting('store_city'),
+            setting('store_zip'),
+        ])->filter()->implode(', ');
     }
 
     private function firstName($order, $user, array $data): string
@@ -198,6 +215,10 @@ class EmailTemplateRenderer
         $qty = e((string) $orderProduct->qty);
         $total = e($orderProduct->line_total->convert($order->currency, $order->currency_rate)->format($order->currency));
 
+        $skuLabel = e(trans('emailtemplate::email_templates.mail.sku'));
+        $qtyLabel = e(trans('emailtemplate::email_templates.mail.qty'));
+        $priceLabel = e(trans('emailtemplate::email_templates.mail.price'));
+
         return <<<HTML
             <tr>
                 <td align="left" style="padding:20px 0;border-bottom:1px solid #ebe3ff">
@@ -212,17 +233,17 @@ class EmailTemplateRenderer
                                     </h3>
 
                                     <p style="Margin:0 0 6px 0;font-family:Poppins,Arial,sans-serif;font-size:14px;line-height:21px;color:#022b3a">
-                                        <strong>SKU:</strong> {$sku}
+                                        <strong>{$skuLabel}:</strong> {$sku}
                                     </p>
 
                                     {$meta}
 
                                     <p style="Margin:8px 0 0 0;font-family:Poppins,Arial,sans-serif;font-size:14px;line-height:21px;color:#022b3a">
-                                        <strong>Кол.:</strong> {$qty}
+                                        <strong>{$qtyLabel}:</strong> {$qty}
                                     </p>
 
                                     <p style="Margin:8px 0 0 0;font-family:Poppins,Arial,sans-serif;font-size:14px;line-height:21px;color:#022b3a">
-                                        <strong>Цена:</strong> {$total}
+                                        <strong>{$priceLabel}:</strong> {$total}
                                     </p>
                                 </td>
                             </tr>
@@ -308,15 +329,18 @@ class EmailTemplateRenderer
             return '';
         }
 
+        $packagingLabel = trans('emailtemplate::email_templates.mail.packaging');
+        $piecesLabel = trans('emailtemplate::email_templates.mail.pieces');
+
         if ($name !== '' && $qty > 0) {
-            return "Упаковка: {$name} ({$qty} шт.)";
+            return "{$packagingLabel}: {$name} ({$qty} {$piecesLabel})";
         }
 
         if ($name !== '') {
-            return "Упаковка: {$name}";
+            return "{$packagingLabel}: {$name}";
         }
 
-        return "Упаковка: {$qty} шт.";
+        return "{$packagingLabel}: {$qty} {$piecesLabel}";
     }
 
     private function orderProductOptionTexts($orderProduct, Order $order): array

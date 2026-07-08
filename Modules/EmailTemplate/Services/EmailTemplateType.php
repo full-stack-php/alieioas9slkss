@@ -75,6 +75,11 @@ class EmailTemplateType
             '{$store_name}',
             '{$store_email}',
             '{$site_url}',
+            '{$order_date}',
+            '{$shipping_cost}',
+            '{$store_phone}',
+            '{$store_address}',
         ];
     }
+
 }
