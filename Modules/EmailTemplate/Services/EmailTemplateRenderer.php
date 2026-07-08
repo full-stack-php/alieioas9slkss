@@ -11,7 +11,7 @@ class EmailTemplateRenderer
     {
         $locale = $this->localeFromData($data);
 
-        $translation = $template->translate($locale) ?: $template->translate(default_locale());
+        $translation = $template->translate($locale) ?: $template->translate($this->fallbackLocale());
 
         $subject = optional($translation)->subject ?: '';
         $content = optional($translation)->content ?: '';
@@ -72,7 +72,7 @@ class EmailTemplateRenderer
 
             '{$order_date}' => $order && $order->created_at ? e($order->created_at->format('Y/m/d')) : '',
             '{$shipping_cost}' => $order ? e($order->shipping_cost->convert($order->currency, $order->currency_rate)->format($order->currency)) : '',
-            '{$store_phone}' => e((string) setting('store_phone')),
+            '{$store_phone}' => e($this->settingText('store_phone')),
             '{$store_address}' => e($this->storeAddress()),
 
             '{$reset_url}' => e((string) ($data['reset_url'] ?? '')),
@@ -98,8 +98,8 @@ class EmailTemplateRenderer
             '{$product_name}' => e((string) ($data['product_name'] ?? '')),
             '{$product_url}' => e((string) ($data['product_url'] ?? '')),
 
-            '{$store_name}' => e((string) setting('store_name')),
-            '{$store_email}' => e((string) setting('store_email')),
+            '{$store_name}' => e($this->settingText('store_name')),
+            '{$store_email}' => e($this->settingText('store_email')),
             '{$site_url}' => e(url('/')),
         ];
     }
@@ -137,7 +137,7 @@ class EmailTemplateRenderer
         }
 
         if (is_array($value)) {
-            foreach ([locale(), default_locale(), config('app.fallback_locale'), 'value', 'name'] as $key) {
+            foreach (array_merge($this->localeCandidates(), ['value', 'name']) as $key) {
                 if (array_key_exists($key, $value)) {
                     return $this->normalizeText($value[$key]);
                 }
@@ -452,5 +452,32 @@ class EmailTemplateRenderer
         }
 
         return $orderProduct->url();
+    }
+
+    private function localeCandidates(): array
+    {
+        return array_values(array_unique(array_filter([
+            $this->currentLocale(),
+            $this->fallbackLocale(),
+            config('app.fallback_locale'),
+        ])));
+    }
+
+    private function currentLocale(): string
+    {
+        if (function_exists('locale')) {
+            return (string) locale();
+        }
+
+        return (string) app()->getLocale();
+    }
+
+    private function fallbackLocale(): string
+    {
+        if (function_exists('default_locale')) {
+            return (string) \default_locale();
+        }
+
+        return (string) config('app.fallback_locale', 'en');
     }
 }
