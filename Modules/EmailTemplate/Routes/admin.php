@@ -26,6 +26,12 @@ Route::post('email-templates', [
     'middleware' => 'can:admin.email_templates.create',
 ]);
 
+Route::post('email-templates/test', [
+    'as' => 'admin.email_templates.test',
+    'uses' => 'EmailTemplateController@sendTest',
+    'middleware' => 'can:admin.email_templates.test',
+]);
+
 Route::get('email-templates/{id}/edit', [
     'as' => 'admin.email_templates.edit',
     'uses' => 'EmailTemplateController@edit',

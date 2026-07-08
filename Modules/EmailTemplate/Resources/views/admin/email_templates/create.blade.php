@@ -20,3 +20,9 @@
         {!! $tabs->render(compact('emailTemplate', 'types', 'recipients', 'statusKeys', 'shortcodesByType')) !!}
     </form>
 @endsection
+
+@push('globals')
+    @vite([
+        'Modules/EmailTemplate/Resources/assets/admin/js/main.js',
+    ])
+@endpush

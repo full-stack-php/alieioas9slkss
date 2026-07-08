@@ -12,4 +12,5 @@ return [
     'product_image_max_width' => 'Максимальная ширина фото, px',
     'product_image_max_height' => 'Максимальная высота фото, px',
     'sort_order' => 'Порядок сортировки',
+    'test_email' => 'Email для теста',
 ];

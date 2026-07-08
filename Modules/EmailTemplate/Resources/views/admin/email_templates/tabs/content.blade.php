@@ -9,6 +9,51 @@
     ></div>
 </div>
 
+<div class="card mb-3">
+    <div class="card-body">
+        <h6 class="mb-3">
+            {{ trans('emailtemplate::email_templates.form.test_email') }}
+        </h6>
+
+        <div class="row align-items-end">
+            <div class="col-md-8">
+                <label for="email-template-test-email" class="form-label">
+                    {{ trans('emailtemplate::email_templates.form.test_email_address') }}
+                </label>
+
+                <input
+                    type="email"
+                    name="test_email"
+                    id="email-template-test-email"
+                    class="form-control"
+                    placeholder="{{ trans('emailtemplate::email_templates.form.test_email_placeholder') }}"
+                    autocomplete="off"
+                >
+
+                <small class="form-text text-muted">
+                    {{ trans('emailtemplate::email_templates.form.test_email_help') }}
+                </small>
+            </div>
+
+            <div class="col-md-4">
+                <button
+                    type="button"
+                    class="btn btn-primary w-100"
+                    id="email-template-send-test"
+                    data-url="{{ route('admin.email_templates.test') }}"
+                    data-default-text="{{ trans('emailtemplate::email_templates.form.send_test_email') }}"
+                    data-sending-text="{{ trans('emailtemplate::email_templates.form.sending_test_email') }}"
+                    data-error-text="{{ trans('emailtemplate::email_templates.form.test_email_failed') }}"
+                >
+                    {{ trans('emailtemplate::email_templates.form.send_test_email') }}
+                </button>
+            </div>
+        </div>
+
+        <div id="email-template-test-message" class="mt-2"></div>
+    </div>
+</div>
+
 <ul class="nav nav-pills">
     @foreach (supported_locales() as $locale => $language)
         <li class="nav-item">
@@ -49,41 +94,9 @@
     @endforeach
 </div>
 
-@push('scripts')
-    <script type="module">
-        const typeSelect = document.querySelector('select[name="type"]');
-        const shortcodesContainer = document.getElementById('email-template-shortcodes');
-
-        if (typeSelect && shortcodesContainer) {
-            const shortcodesByType = JSON.parse(shortcodesContainer.dataset.shortcodesByType || '{}');
-            const emptyText = shortcodesContainer.dataset.emptyText || '';
-
-            const renderShortcodes = () => {
-                const selectedType = typeSelect.value;
-                const shortcodes = shortcodesByType[selectedType] || [];
-
-                shortcodesContainer.innerHTML = '';
-
-                if (!shortcodes.length) {
-                    shortcodesContainer.textContent = emptyText;
-
-                    return;
-                }
-
-                shortcodes.forEach((shortcode) => {
-                    const code = document.createElement('code');
-
-                    code.classList.add('me-2');
-                    code.textContent = shortcode;
-
-                    shortcodesContainer.appendChild(code);
-                });
-            };
-
-            typeSelect.addEventListener('change', renderShortcodes);
-
-            renderShortcodes();
-        }
-    </script>
+@push('globals')
+    @vite([
+        'Modules/EmailTemplate/Resources/assets/admin/js/mailEditor.js',
+    ])
 @endpush
 

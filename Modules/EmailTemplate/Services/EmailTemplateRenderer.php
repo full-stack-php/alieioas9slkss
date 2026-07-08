@@ -81,6 +81,18 @@ class EmailTemplateRenderer
             '{$gift_certificate_code}' => e((string) ($data['gift_certificate_code'] ?? '')),
             '{$transaction_id}' => e((string) ($data['transaction_id'] ?? '')),
 
+            '{$return_id}' => e((string) ($data['return_id'] ?? '')),
+            '{$return_status}' => e((string) ($data['return_status'] ?? '')),
+            '{$return_reason}' => e((string) ($data['return_reason'] ?? '')),
+            '{$return_comment}' => e((string) ($data['return_comment'] ?? '')),
+
+            '{$gift_certificate_amount}' => e((string) ($data['gift_certificate_amount'] ?? '')),
+            '{$gift_certificate_from}' => e((string) ($data['gift_certificate_from'] ?? '')),
+            '{$gift_certificate_message}' => e((string) ($data['gift_certificate_message'] ?? '')),
+
+            '{$transaction_amount}' => e((string) ($data['transaction_amount'] ?? '')),
+            '{$message}' => e((string) ($data['message'] ?? '')),
+
             '{$question}' => e((string) ($data['question'] ?? '')),
             '{$answer}' => e((string) ($data['answer'] ?? '')),
             '{$product_name}' => e((string) ($data['product_name'] ?? '')),
@@ -290,6 +302,10 @@ class EmailTemplateRenderer
     {
         $lines = [];
 
+        if ($orderProduct->isGift()) {
+            $lines[] = trans('emailtemplate::email_templates.mail.gift');
+        }
+
         $packaging = $this->orderProductPackagingText($orderProduct);
 
         if ($packaging !== '') {
@@ -310,10 +326,10 @@ class EmailTemplateRenderer
             $line = e($line);
 
             $html .= <<<HTML
-            <p style="Margin:0 0 6px 0;font-family:Poppins,Arial,sans-serif;font-size:14px;line-height:21px;color:#022b3a">
-                {$line}
-            </p>
-            HTML;
+        <p style="Margin:0 0 6px 0;font-family:Poppins,Arial,sans-serif;font-size:14px;line-height:21px;color:#022b3a">
+            {$line}
+        </p>
+        HTML;
         }
 
         return $html;

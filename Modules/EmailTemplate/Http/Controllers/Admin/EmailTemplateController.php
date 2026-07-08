@@ -8,6 +8,9 @@ use Modules\Order\Entities\OrderStatus;
 use Modules\EmailTemplate\Entities\EmailTemplate;
 use Modules\EmailTemplate\Services\EmailTemplateType;
 use Modules\EmailTemplate\Http\Requests\SaveEmailTemplateRequest;
+use Illuminate\Http\JsonResponse;
+use Modules\EmailTemplate\Services\EmailTemplateTestSender;
+use Modules\EmailTemplate\Http\Requests\SendTestEmailTemplateRequest;
 
 class EmailTemplateController
 {
@@ -44,6 +47,23 @@ class EmailTemplateController
         return view("{$this->viewPath}.index", [
             'types' => EmailTemplateType::all(),
             'recipients' => EmailTemplateType::recipients(),
+        ]);
+    }
+
+    public function sendTest(
+        SendTestEmailTemplateRequest $request,
+        EmailTemplateTestSender $testSender
+    ): JsonResponse {
+        $payload = $request->validated();
+
+        $email = $payload['test_email'];
+
+        unset($payload['test_email']);
+
+        $testSender->send($email, $payload);
+
+        return response()->json([
+            'message' => trans('emailtemplate::email_templates.form.test_email_sent'),
         ]);
     }
 }
