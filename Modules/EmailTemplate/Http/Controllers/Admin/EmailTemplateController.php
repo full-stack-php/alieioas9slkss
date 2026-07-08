@@ -11,6 +11,7 @@ use Modules\EmailTemplate\Http\Requests\SaveEmailTemplateRequest;
 use Illuminate\Http\JsonResponse;
 use Modules\EmailTemplate\Services\EmailTemplateTestSender;
 use Modules\EmailTemplate\Http\Requests\SendTestEmailTemplateRequest;
+use Throwable;
 
 class EmailTemplateController
 {
@@ -60,7 +61,13 @@ class EmailTemplateController
 
         unset($payload['test_email']);
 
-        $testSender->send($email, $payload);
+        try {
+            $testSender->send($email, $payload);
+        } catch (Throwable) {
+            return response()->json([
+                'message' => trans('emailtemplate::email_templates.form.test_email_failed'),
+            ], 500);
+        }
 
         return response()->json([
             'message' => trans('emailtemplate::email_templates.form.test_email_sent'),

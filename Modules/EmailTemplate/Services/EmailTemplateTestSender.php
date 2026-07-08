@@ -2,6 +2,7 @@
 
 namespace Modules\EmailTemplate\Services;
 
+use Throwable;
 use Illuminate\Support\Facades\Mail;
 use Modules\EmailTemplate\Mail\TemplateEmail;
 use Modules\EmailTemplate\Entities\EmailTemplate;
@@ -10,23 +11,35 @@ class EmailTemplateTestSender
 {
     public function __construct(
         private EmailTemplateRenderer $renderer,
-        private EmailTemplateDemoData $demoData
+        private EmailTemplateDemoData $demoData,
+        private EmailTemplateMailLogger $logger
     ) {
     }
 
     public function send(string $email, array $payload): void
     {
-        $template = $this->makeTemplate($payload);
+        try {
+            $template = $this->makeTemplate($payload);
 
-        $rendered = $this->renderer->render(
-            $template,
-            $this->demoData->forType($template->type, $payload)
-        );
+            $rendered = $this->renderer->render(
+                $template,
+                $this->demoData->forType($template->type, $payload)
+            );
 
-        Mail::to($email)->send(new TemplateEmail(
-            $rendered['subject'],
-            $rendered['html']
-        ));
+            Mail::to($email)->send(new TemplateEmail(
+                $rendered['subject'],
+                $rendered['html']
+            ));
+        } catch (Throwable $exception) {
+            $this->logger->error('Email template test mail sending failed.', $exception, [
+                'to' => $email,
+                'type' => $payload['type'] ?? null,
+                'recipient' => $payload['recipient'] ?? null,
+                'status_key' => $payload['status_key'] ?? null,
+            ]);
+
+            throw $exception;
+        }
     }
 
     private function makeTemplate(array $payload): EmailTemplate
