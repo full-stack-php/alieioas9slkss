@@ -320,10 +320,31 @@ class EmailTemplateDemoData
     private function unitPrice(Product $product, $packaging = null): float
     {
         if ($packaging) {
-            return (float) $packaging->price * max(1, (int) $packaging->qty);
+            return $this->moneyAmount($packaging->price) * max(1, (int) $packaging->qty);
         }
 
-        return (float) ($product->selling_price ?: $product->price ?: 1000);
+        return $this->moneyAmount(
+            $product->selling_price
+                ?: $product->price
+                ?: 1000
+        );
+    }
+
+    private function moneyAmount(mixed $value): float
+    {
+        if (is_null($value)) {
+            return 0;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        if (is_object($value) && method_exists($value, 'amount')) {
+            return (float) $value->amount();
+        }
+
+        return 0;
     }
 
     private function rawLineTotal(OrderProduct $orderProduct): float

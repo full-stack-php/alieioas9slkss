@@ -107,11 +107,54 @@ class EmailTemplateRenderer
     private function storeAddress(): string
     {
         return collect([
-            setting('store_address_1'),
-            setting('store_address_2'),
-            setting('store_city'),
-            setting('store_zip'),
-        ])->filter()->implode(', ');
+            'store_address_1',
+            'store_address_2',
+            'store_city',
+            'store_zip',
+        ])
+            ->map(fn ($key) => $this->settingText($key))
+            ->filter()
+            ->implode(', ');
+    }
+
+    private function settingText(string $key): string
+    {
+        return $this->normalizeText(setting($key));
+    }
+
+    private function normalizeText(mixed $value): string
+    {
+        if (is_null($value)) {
+            return '';
+        }
+
+        if (is_scalar($value)) {
+            return (string) $value;
+        }
+
+        if (is_object($value) && method_exists($value, '__toString')) {
+            return (string) $value;
+        }
+
+        if (is_array($value)) {
+            foreach ([locale(), default_locale(), config('app.fallback_locale'), 'value', 'name'] as $key) {
+                if (array_key_exists($key, $value)) {
+                    return $this->normalizeText($value[$key]);
+                }
+            }
+
+            foreach ($value as $item) {
+                $text = $this->normalizeText($item);
+
+                if ($text !== '') {
+                    return $text;
+                }
+            }
+
+            return '';
+        }
+
+        return '';
     }
 
     private function firstName($order, $user, array $data): string
