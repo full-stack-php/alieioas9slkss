@@ -2,12 +2,11 @@
 
 namespace Modules\Contact\Http\Controllers;
 
-use Illuminate\Mail\Message;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Mail;
 use Modules\Contact\Entities\ContactSubmission;
+use Modules\Contact\Events\ContactSubmissionCreated;
 use Modules\Contact\Http\Requests\StoreCallbackRequest;
 use Modules\Contact\Http\Requests\StoreContactSubmissionRequest;
 use Modules\Media\Entities\File;
@@ -81,10 +80,7 @@ class ContactController
             'user_agent' => $request->userAgent(),
         ]);
 
-        $this->sendMailIfConfigured(
-            trans('contact::contact_submissions.mail.new_contact_subject'),
-            $this->buildContactMailText($submission)
-        );
+        event(new ContactSubmissionCreated($submission));
 
         return back()->with('success', trans('contact::messages.your_message_has_been_sent'));
     }
@@ -124,10 +120,7 @@ class ContactController
             'user_agent' => $request->userAgent(),
         ]);
 
-        $this->sendMailIfConfigured(
-            trans('contact::contact_submissions.mail.new_callback_subject'),
-            $this->buildCallbackMailText($submission)
-        );
+        event(new ContactSubmissionCreated($submission));
 
         return response()->json([
             'success' => trans('contact::messages.your_callback_has_been_sent'),
@@ -135,59 +128,4 @@ class ContactController
 
     }
 
-    private function buildContactMailText(ContactSubmission $submission): string
-    {
-        return implode(PHP_EOL, array_filter([
-            'Новая заявка со страницы контактов',
-            '',
-            'Имя: ' . $submission->name,
-            'Телефон: ' . $submission->phone,
-            'Страница: ' . $submission->source_url,
-            'IP: ' . $submission->ip_address,
-        ]));
-    }
-
-    private function buildCallbackMailText(ContactSubmission $submission): string
-    {
-        return implode(PHP_EOL, array_filter([
-            'Новая заявка на обратный звонок',
-            '',
-            'Имя: ' . $submission->name,
-            'Телефон: ' . $submission->phone,
-            'Email: ' . $submission->email,
-            'Тема: ' . $submission->topic,
-            'Комментарий: ' . $submission->message,
-            'Желаемое время звонка: ' . optional($submission->preferred_call_at)->format('Y-m-d H:i:s'),
-            'Страница: ' . $submission->source_url,
-            'IP: ' . $submission->ip_address,
-        ]));
-    }
-
-    private function canSendMail(): bool
-    {
-        return !empty(setting('mail_host'))
-            && !empty(setting('mail_port'))
-            && !empty(setting('mail_from_address'))
-            && !empty(setting('store_email'));
-    }
-
-    private function sendMailIfConfigured(string $subject, string $body): void
-    {
-        if (!$this->canSendMail()) {
-            Log::info('Mail was not sent because mail settings are incomplete.', [
-                'subject' => $subject,
-                'mail_host' => setting('mail_host'),
-                'mail_port' => setting('mail_port'),
-                'mail_from_address' => setting('mail_from_address'),
-                'store_email' => setting('store_email'),
-            ]);
-
-            return;
-        }
-
-        Mail::raw($body, function (Message $message) use ($subject) {
-            $message->subject($subject)
-                ->to(setting('store_email'));
-        });
-    }
 }

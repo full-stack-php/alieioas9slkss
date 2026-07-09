@@ -98,6 +98,11 @@ class EmailTemplateRenderer
             '{$product_name}' => e((string) ($data['product_name'] ?? '')),
             '{$product_url}' => e((string) ($data['product_url'] ?? '')),
 
+            '{$review_rating}' => e((string) ($data['review_rating'] ?? '')),
+            '{$review_plus}' => e((string) ($data['review_plus'] ?? '')),
+            '{$review_minus}' => e((string) ($data['review_minus'] ?? '')),
+            '{$review_comment}' => e((string) ($data['review_comment'] ?? '')),
+
             '{$store_name}' => e($this->settingText('store_name')),
             '{$store_email}' => e($this->settingText('store_email')),
             '{$site_url}' => e(url('/')),

@@ -3,6 +3,8 @@
 namespace Modules\EmailTemplate\Providers;
 
 use Modules\Checkout\Events\OrderPlaced;
+use Modules\Contact\Events\ContactSubmissionCreated;
+use Modules\EmailTemplate\Listeners\SendContactFormEmailTemplate;
 use Modules\Order\Events\OrderStatusChanged;
 use Modules\User\Events\CustomerRegistered;
 use Modules\Review\Events\ReviewSubmitted;
@@ -46,6 +48,10 @@ class EventServiceProvider extends ServiceProvider
 
         QuestionAnswerAnswered::class => [
             SendQuestionAnswerEmailTemplate::class,
+        ],
+
+        ContactSubmissionCreated::class => [
+            SendContactFormEmailTemplate::class,
         ],
     ];
 }
