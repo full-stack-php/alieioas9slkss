@@ -59,6 +59,24 @@ class EmailTemplateRenderer
         return $this->currentLocale();
     }
 
+    private function isCustomerMail(EmailTemplate $template): bool
+    {
+        return $template->recipient === EmailTemplateType::RECIPIENT_CUSTOMER;
+    }
+
+    private function withLocale(string $locale, callable $callback): mixed
+    {
+        $previousLocale = App::getLocale();
+
+        App::setLocale($locale);
+
+        try {
+            return $callback();
+        } finally {
+            App::setLocale($previousLocale);
+        }
+    }
+
     private function shortcodes(array $data, EmailTemplate $template): array
     {
         $order = $data['order'] ?? null;
