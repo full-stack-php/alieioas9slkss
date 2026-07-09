@@ -26,7 +26,7 @@ class EmailTemplateMailer
                 $template->id,
                 $this->normalizeRecipientForQueue($to),
                 $data
-            );
+            )->onConnection('database')->onQueue('default');
 
             return true;
         } catch (Throwable $exception) {
