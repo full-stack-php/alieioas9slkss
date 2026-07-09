@@ -44,21 +44,22 @@ class EmailTemplateMailer
 
     private function findTemplate(string $type, string $recipient, ?string $statusKey = null): ?EmailTemplate
     {
-        $query = EmailTemplate::forMail($type, $recipient);
+        $templates = EmailTemplate::forMail($type, $recipient)->get();
 
         if (!is_null($statusKey) && $statusKey !== '') {
-            $template = (clone $query)
-                ->where('status_key', $statusKey)
-                ->first();
+            $template = $templates->first(
+                fn (EmailTemplate $template) => $template->appliesToStatusKey($statusKey)
+                    && !empty($template->status_keys)
+            );
 
             if ($template) {
                 return $template;
             }
         }
 
-        return (clone $query)
-            ->whereNull('status_key')
-            ->first();
+        return $templates->first(
+            fn (EmailTemplate $template) => empty($template->status_keys)
+        );
     }
 
     private function normalizeRecipientForQueue(mixed $to): mixed

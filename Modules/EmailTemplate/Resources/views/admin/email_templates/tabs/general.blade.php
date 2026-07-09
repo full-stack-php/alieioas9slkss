@@ -4,7 +4,7 @@
 
         {{ Form::select('recipient', trans('emailtemplate::attributes.recipient'), $errors, $recipients, $emailTemplate, ['required' => true]) }}
 
-        {{ Form::select('status_key', trans('emailtemplate::attributes.status_key'), $errors, $statusKeys, $emailTemplate) }}
+        {{ Form::select('status_key', trans('emailtemplate::attributes.status_key'), $errors, $statusKeys, $emailTemplate, ['multiple' => true]) }}
 
         {{ Form::number('product_image_max_width', trans('emailtemplate::attributes.product_image_max_width'), $errors, $emailTemplate, ['min' => 1]) }}
 

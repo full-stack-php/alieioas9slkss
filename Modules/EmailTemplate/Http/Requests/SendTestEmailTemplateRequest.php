@@ -16,7 +16,8 @@ class SendTestEmailTemplateRequest extends Request
             'test_email' => ['required', 'email'],
             'type' => ['required', Rule::in(array_keys(EmailTemplateType::all()))],
             'recipient' => ['required', Rule::in(array_keys(EmailTemplateType::recipients()))],
-            'status_key' => ['nullable', 'string', 'max:255'],
+            'status_key' => ['nullable', 'array'],
+            'status_key.*' => ['nullable', 'string', 'max:255'],
             'is_active' => ['required', 'boolean'],
             'show_product_image' => ['required', 'boolean'],
             'product_image_max_width' => ['required', 'integer', 'min:1', 'max:2000'],
@@ -36,7 +37,7 @@ class SendTestEmailTemplateRequest extends Request
     protected function prepareForValidation()
     {
         $this->merge([
-            'status_key' => $this->get('status_key') ?: null,
+            'status_key' => $this->normalizeStatusKeys($this->input('status_key', [])),
             'is_active' => $this->has('is_active'),
             'show_product_image' => $this->has('show_product_image'),
             'product_image_max_width' => $this->get('product_image_max_width') ?: 80,
@@ -58,5 +59,25 @@ class SendTestEmailTemplateRequest extends Request
         }
 
         return $attributes;
+    }
+
+    private function normalizeStatusKeys($value): ?array
+    {
+        if (is_null($value) || $value === '') {
+            return null;
+        }
+
+        if (!is_array($value)) {
+            $value = [$value];
+        }
+
+        $statuses = collect($value)
+            ->filter(fn ($status) => $status !== null && $status !== '')
+            ->map(fn ($status) => (string) $status)
+            ->unique()
+            ->values()
+            ->toArray();
+
+        return empty($statuses) ? null : $statuses;
     }
 }

@@ -68,7 +68,7 @@ class EmailTemplateDemoData
 
         $order = new Order([
             'id' => random_int(100000, 999999),
-            'status' => $payload['status_key'] ?? 'pending',
+            'status' => $this->demoOrderStatus($payload),
             'currency' => setting('default_currency'),
             'currency_rate' => 1,
 
@@ -108,6 +108,17 @@ class EmailTemplateDemoData
         $order->setRelation('products', $products);
 
         return $order;
+    }
+
+    private function demoOrderStatus(array $payload): string
+    {
+        $statusKey = $payload['status_key'] ?? null;
+
+        if (is_array($statusKey)) {
+            return (string) (collect($statusKey)->filter()->first() ?: 'pending');
+        }
+
+        return (string) ($statusKey ?: 'pending');
     }
 
     private function orderProducts(): Collection

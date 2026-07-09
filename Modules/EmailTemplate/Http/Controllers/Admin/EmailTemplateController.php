@@ -30,7 +30,7 @@ class EmailTemplateController
         return [
             'types' => EmailTemplateType::all(),
             'recipients' => EmailTemplateType::recipients(),
-            'statusKeys' => ['' => trans('emailtemplate::email_templates.form.any_status')] + OrderStatus::list(),
+            'statusKeys' => OrderStatus::list(),
             'shortcodesByType' => EmailTemplateType::shortcodesByType(),
         ];
     }
