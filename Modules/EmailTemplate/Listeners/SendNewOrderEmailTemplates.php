@@ -10,6 +10,10 @@ class SendNewOrderEmailTemplates
 {
     public function handle(OrderPlaced $event): void
     {
+        $order = $event->order->fresh() ?: $event->order;
+
+        $statusKey = $order->status ? (string) $order->status : null;
+
         $mailer = app(EmailTemplateMailer::class);
 
         if (setting('admin_order_email') && setting('store_email')) {
@@ -17,16 +21,18 @@ class SendNewOrderEmailTemplates
                 EmailTemplateType::NEW_ORDER,
                 EmailTemplateType::RECIPIENT_ADMIN,
                 setting('store_email'),
-                ['order' => $event->order]
+                ['order' => $order],
+                $statusKey
             );
         }
 
-        if (setting('invoice_email') && $event->order->customer_email) {
+        if (setting('invoice_email') && $order->customer_email) {
             $mailer->send(
                 EmailTemplateType::NEW_ORDER,
                 EmailTemplateType::RECIPIENT_CUSTOMER,
-                $event->order->customer_email,
-                ['order' => $event->order]
+                $order->customer_email,
+                ['order' => $order],
+                $statusKey
             );
         }
     }
