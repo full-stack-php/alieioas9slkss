@@ -59,6 +59,7 @@ class SendQuestionAnswerEmailTemplate
             'email' => optional($questionAnswer->asker)->email,
             'question' => $questionAnswer->question,
             'answer' => $questionAnswer->answer,
+            'product' => $questionAnswer->product,
             'product_name' => optional($questionAnswer->product)->name,
             'product_url' => $questionAnswer->product ? route('products.show', ['slug' => $questionAnswer->product->slug]) : '',
         ];

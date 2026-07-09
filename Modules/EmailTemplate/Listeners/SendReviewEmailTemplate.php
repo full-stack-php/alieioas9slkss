@@ -25,8 +25,11 @@ class SendReviewEmailTemplate
                 'fullname' => $review->reviewer_name,
                 'email' => optional($review->reviewer)->email,
                 'review_url' => route('admin.reviews.edit', $review->id),
+
+                'product' => $review->product,
                 'product_name' => optional($review->product)->name,
                 'product_url' => $review->product ? route('products.show', ['slug' => $review->product->slug]) : '',
+
                 'review_rating' => $review->rating,
                 'review_plus' => $review->plus,
                 'review_minus' => $review->minus,

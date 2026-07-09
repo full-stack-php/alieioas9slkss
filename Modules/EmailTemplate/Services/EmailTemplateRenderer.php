@@ -2,24 +2,33 @@
 
 namespace Modules\EmailTemplate\Services;
 
+use Illuminate\Support\Facades\App;
 use Modules\Order\Entities\Order;
 use Modules\EmailTemplate\Entities\EmailTemplate;
 
 class EmailTemplateRenderer
 {
+    private const CUSTOMER_MAIL_LOCALE = 'uk';
+
     public function render(EmailTemplate $template, array $data = []): array
     {
-        $locale = $this->localeFromData($data);
+        $locale = $this->localeFromData($data, $template);
 
-        $translation = $template->translate($locale) ?: $template->translate($this->fallbackLocale());
+        return $this->withLocale($locale, function () use ($template, $data, $locale) {
+            $translation = $template->translate($locale);
 
-        $subject = optional($translation)->subject ?: '';
-        $content = optional($translation)->content ?: '';
+            if (!$translation && !$this->isCustomerMail($template)) {
+                $translation = $template->translate($this->fallbackLocale());
+            }
 
-        return [
-            'subject' => $this->replaceShortcodes($subject, $template, $data),
-            'html' => $this->replaceShortcodes($content, $template, $data),
-        ];
+            $subject = optional($translation)->subject ?: '';
+            $content = optional($translation)->content ?: '';
+
+            return [
+                'subject' => $this->replaceShortcodes($subject, $template, $data),
+                'html' => $this->replaceShortcodes($content, $template, $data),
+            ];
+        });
     }
 
     public function replaceShortcodes(string $content, EmailTemplate $template, array $data = []): string
@@ -33,8 +42,12 @@ class EmailTemplateRenderer
         );
     }
 
-    private function localeFromData(array $data): string
+    private function localeFromData(array $data, EmailTemplate $template): string
     {
+        if ($this->isCustomerMail($template)) {
+            return self::CUSTOMER_MAIL_LOCALE;
+        }
+
         if (isset($data['order']) && !empty($data['order']->locale)) {
             return $data['order']->locale;
         }
@@ -43,7 +56,7 @@ class EmailTemplateRenderer
             return $data['user']->locale;
         }
 
-        return locale();
+        return $this->currentLocale();
     }
 
     private function shortcodes(array $data, EmailTemplate $template): array
@@ -95,8 +108,8 @@ class EmailTemplateRenderer
 
             '{$question}' => e((string) ($data['question'] ?? '')),
             '{$answer}' => e((string) ($data['answer'] ?? '')),
-            '{$product_name}' => e((string) ($data['product_name'] ?? '')),
-            '{$product_url}' => e((string) ($data['product_url'] ?? '')),
+            '{$product_name}' => e($this->productName($data)),
+            '{$product_url}' => e($this->productUrl($data)),
 
             '{$review_rating}' => e((string) ($data['review_rating'] ?? '')),
             '{$review_plus}' => e((string) ($data['review_plus'] ?? '')),
@@ -470,11 +483,7 @@ class EmailTemplateRenderer
 
     private function currentLocale(): string
     {
-        if (function_exists('locale')) {
-            return (string) locale();
-        }
-
-        return (string) app()->getLocale();
+        return (string) App::getLocale();
     }
 
     private function fallbackLocale(): string
@@ -484,5 +493,23 @@ class EmailTemplateRenderer
         }
 
         return (string) config('app.fallback_locale', 'en');
+    }
+
+    private function productName(array $data): string
+    {
+        if (isset($data['product']) && $data['product']) {
+            return (string) $data['product']->name;
+        }
+
+        return (string) ($data['product_name'] ?? '');
+    }
+
+    private function productUrl(array $data): string
+    {
+        if (isset($data['product']) && $data['product']) {
+            return route('products.show', ['slug' => $data['product']->slug]);
+        }
+
+        return (string) ($data['product_url'] ?? '');
     }
 }
