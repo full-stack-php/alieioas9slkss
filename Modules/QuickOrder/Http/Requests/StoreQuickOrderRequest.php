@@ -5,7 +5,7 @@ namespace Modules\QuickOrder\Http\Requests;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Modules\Core\Http\Requests\Request;
-use Modules\Option\Entities\Option;
+use Modules\Option\Entities\ProductOption;
 use Modules\Product\Entities\Product;
 
 class StoreQuickOrderRequest extends Request
@@ -16,7 +16,7 @@ class StoreQuickOrderRequest extends Request
 
     public function rules(): array
     {
-        return array_merge(
+        $rules = array_merge(
             [
                 'product_id' => ['required', 'integer', 'exists:products,id'],
                 'qty' => ['nullable', 'integer', 'min:1'],
@@ -28,9 +28,17 @@ class StoreQuickOrderRequest extends Request
                 'm_options' => ['nullable', 'array'],
                 'ch_gifts' => ['nullable', 'array'],
             ],
-            $this->getOptionsRules($this->productOptions(), 'options'),
-            $this->getOptionsRules($this->productOptions(), 'm_options')
+            $this->getOptionsRules($this->productOptions(), 'options')
         );
+
+        if ($this->boolean('is_mirrored')) {
+            $rules = array_merge(
+                $rules,
+                $this->getOptionsRules($this->productOptions(), 'm_options')
+            );
+        }
+
+        return $rules;
     }
 
     public function validationData(): array
@@ -135,7 +143,7 @@ class StoreQuickOrderRequest extends Request
         })->all();
     }
 
-    private function getOptionRules(Option $option): array
+    private function getOptionRules(ProductOption $option): array
     {
         $rules = [];
 

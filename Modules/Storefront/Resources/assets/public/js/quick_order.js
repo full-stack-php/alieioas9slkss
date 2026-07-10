@@ -156,7 +156,7 @@ $(document).ready(function () {
 
         return {
             product_id: $('#fastorder_data input[name="product_id"]').val(),
-            qty: $('#htop_quickorder').val() || 1,
+            qty: selectedQuantity(),
             phone: $('#fastorder_data [name="phone"]').val(),
             comment: $('#fastorder_data [name="comment"]').val(),
             packaging_id: $('input[name="packaging_id"]:checked').val() || null,
@@ -166,6 +166,13 @@ $(document).ready(function () {
             ch_gifts: selectedGifts(),
             gift_packaging_ids: selectedGiftPackagings()
         };
+    }
+
+    function selectedQuantity() {
+        const popupQty = $('#htop_quickorder').val();
+        const productQty = $('input[name="quantity"]').not('#htop_quickorder').val();
+
+        return popupQty || productQty || 1;
     }
 
     $(document).on('click', '.js-quick-order-open', function (e) {

@@ -44,7 +44,9 @@
                             <div class="form-group {{ config('korf.modules.quickorder.config.fields.phone.required', true) ? 'field_required' : '' }}">
                                 <div class="input-group-flex">
                                     <div class="input-group-icon">
-                                        <img src="{{ asset('build/assets/img/phone.svg') }}" alt="">
+                                        <svg class="icon icon-22">
+                                            <use xlink:href="#phone"></use>
+                                        </svg>
                                     </div>
 
                                     <input

@@ -189,7 +189,9 @@ class QuickOrderService
             }
         }
 
-        return optional($methods->keys()->first()) ?: 'quick_order';
+        $firstMethod = $methods->keys()->first();
+
+        return $firstMethod ?: 'quick_order';
     }
 
     private function initialOrderStatus(): ?int
