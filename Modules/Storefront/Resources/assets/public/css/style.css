@@ -2683,9 +2683,6 @@ header .text-a-icon-cart  {
     z-index: 9;
     font-size: 12px;
 }
-[class^="col-"] .form-group.field_required:before {
-    left:10px;
-}
 .form-group.field_required input{
     padding-left:20px;
 }

@@ -13,7 +13,7 @@
 
             <div class="modal-body">
                 <div class="row-flex flex-column flex-sm-row">
-                    <div class="col-12 d-flex flex-column fo_product">
+                    <div class="col-12 p-3 d-flex flex-column fo_product">
                         <div class="d-flex flex-column mb-20">
                             <div class="fo_product__content d-flex flex-column w-100 justify-content-center">
                                 <div class="fo_product__name">
@@ -24,10 +24,11 @@
                                     <input type="hidden" id="this_prod_id" value="{{ $product->id }}" name="product_id">
                                 </div>
                             </div>
-                            <div class="fo_product__image">
+                            <div class="fo_product__image d-flex justify-content-center">
                                 @if($product->base_image && $product->base_image->path)
                                     <img
-                                        src="{{ $product->base_image->resizeAndCrop(250, 250) }}"
+                                        class="img-fluid"
+                                        src="{{ $product->base_image->resizeAndCrop(350, 350) }}"
                                         alt="{{ $product->name }}"
                                     >
                                 @endif
@@ -41,7 +42,7 @@
                         <div class="quick-order-alert d-none"></div>
 
                         @if(config('korf.modules.quickorder.config.fields.phone.enabled', true))
-                            <div class="form-group {{ config('korf.modules.quickorder.config.fields.phone.required', true) ? 'field_required' : '' }}">
+                            <div class="form-group {{ config('korf.modules.quickorder.config.fields.phone.required', true) ? 'field_required' : '' }} mb-0">
                                 <div class="input-group-flex">
                                     <div class="input-group-icon">
                                         <svg class="icon icon-22">
@@ -61,41 +62,18 @@
                                 </div>
                             </div>
                         @endif
-
-                        @if(config('korf.modules.quickorder.config.fields.comment.enabled', true))
-                            <div class="form-group {{ config('korf.modules.quickorder.config.fields.comment.required', false) ? 'field_required' : '' }}">
-                                <textarea
-                                    rows="5"
-                                    id="contact-comment"
-                                    class="form-control contact-comment-buyer"
-                                    name="comment"
-                                    placeholder="{{ trans('storefront::quick_order.comment_placeholder') }}"
-                                ></textarea>
-                            </div>
-                        @endif
                     </div>
                 </div>
             </div>
 
             <div class="modal-footer">
-                <div class="row-flex flex-column flex-sm-row">
-                    <div class="col-12 d-flex flex-column flex-sm-row align-items-center justify-content-between pt-25">
-                            <button
-                                class="chm-btn chm-btn-outline-primary chm-px-lg chm-lg-rounded xs-w-100 sm-w-auto mw-200 xs-mb-20 sm-mb-0"
-                                type="button"
-                                data-bs-dismiss="modal"
-                            >
-                                {{ trans('storefront::quick_order.continue') }}
-                            </button>
-                            <button
-                                id="up-btn-fastorder"
-                                class="chm-btn chm-btn-primary qo_confirm chm-px-lg chm-lg-rounded xs-w-100 sm-w-auto mw-200"
-                                type="submit"
-                            >
-                                {{ trans('storefront::quick_order.submit') }}
-                            </button>
-                    </div>
-                </div>
+                    <button
+                        id="up-btn-fastorder"
+                        class="chm-btn chm-btn-primary qo_confirm chm-px-lg chm-lg-rounded w-100"
+                        type="submit"
+                    >
+                        {{ trans('storefront::quick_order.submit') }}
+                    </button>
 
             </div>
         </form>

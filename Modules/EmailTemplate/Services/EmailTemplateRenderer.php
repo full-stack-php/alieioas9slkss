@@ -248,6 +248,10 @@ class EmailTemplateRenderer
 
     private function billingAddress(Order $order): string
     {
+        if ($order->is_quick_order) {
+            return $this->quickOrderToBeConfirmed($order);
+        }
+
         return collect([
             $order->billing_full_name,
             $order->billing_address_1_display,
@@ -259,6 +263,10 @@ class EmailTemplateRenderer
 
     private function shippingAddress(Order $order): string
     {
+        if ($order->is_quick_order) {
+            return $this->quickOrderToBeConfirmed($order);
+        }
+
         return collect([
             $order->shipping_full_name,
             $order->shipping_address_1_display,
@@ -278,10 +286,6 @@ class EmailTemplateRenderer
             $city = $order->shipping_city_display;
             $state = $order->shipping_state_display;
             $zip = $order->shipping_zip;
-        }
-
-        if ($order->is_quick_order) {
-            return trim(trim("{$city}, {$zip}"), ',');
         }
 
         return trim(trim("{$city}, {$state} {$zip}"), ',');
@@ -552,13 +556,8 @@ class EmailTemplateRenderer
 
     private function shippingMethodLabel(Order $order): string
     {
-        $method = (string) $order->getRawOriginal('shipping_method');
-
-        $key = "quickorder::quick_order.shipping_methods.{$method}";
-        $translated = trans($key);
-
-        if ($translated !== $key) {
-            return $translated;
+        if ($order->is_quick_order) {
+            return $this->quickOrderToBeConfirmed($order);
         }
 
         return (string) $order->shipping_method;
@@ -566,15 +565,19 @@ class EmailTemplateRenderer
 
     private function paymentMethodLabel(Order $order): string
     {
-        $method = (string) $order->getRawOriginal('payment_method');
-
-        $key = "quickorder::quick_order.payment_methods.{$method}";
-        $translated = trans($key);
-
-        if ($translated !== $key) {
-            return $translated;
+        if ($order->is_quick_order) {
+            return $this->quickOrderToBeConfirmed($order);
         }
 
         return (string) $order->payment_method;
+    }
+
+    private function quickOrderToBeConfirmed(Order $order): string
+    {
+        if (!$order->is_quick_order) {
+            return '';
+        }
+
+        return trans('quickorder::quick_order.to_be_confirmed');
     }
 }
