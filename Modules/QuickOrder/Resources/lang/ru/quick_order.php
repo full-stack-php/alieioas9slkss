@@ -1,10 +1,11 @@
 <?php
 
 return [
-    'guest_first_name' => 'Quick',
-    'guest_last_name' => 'Order',
-    'address_stub' => 'Quick order',
-    'city_stub' => 'Quick order',
-    'state_stub' => 'Quick order',
-    'order_note' => 'Quick order',
+    'guest_first_name' => 'Быстрый',
+    'guest_last_name' => 'Заказ',
+    'address_stub' => 'Быстрый заказ',
+    'city_stub' => 'Быстрый заказ',
+    'state_stub' => 'Быстрый заказ',
+    'order_note' => 'Быстрый заказ',
+    'to_be_confirmed' => 'Уточняется',
 ];

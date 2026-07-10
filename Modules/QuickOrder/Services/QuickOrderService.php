@@ -127,8 +127,8 @@ class QuickOrderService
                 'customer_id' => $user->id,
                 'email' => $user->email,
                 'phone' => $request->input('phone') ?: $user->phone,
-                'first_name' => $user->first_name ?: trans('quickorder::quick_order.guest_first_name'),
-                'last_name' => $user->last_name ?: trans('quickorder::quick_order.guest_last_name'),
+                'first_name' => $user->first_name ?: 'quickorder::quick_order.guest_first_name',
+                'last_name' => $user->last_name ?: 'quickorder::quick_order.guest_last_name',
             ];
         }
 

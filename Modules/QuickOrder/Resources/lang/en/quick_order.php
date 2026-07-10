@@ -7,4 +7,5 @@ return [
     'city_stub' => 'Quick order',
     'state_stub' => 'Quick order',
     'order_note' => 'Quick order',
+    'to_be_confirmed' => 'To be confirmed',
 ];

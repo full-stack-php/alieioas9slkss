@@ -29,11 +29,17 @@
                 @if ($order->shipping_address_2)
                     <p class="mb-1">{{ $order->translateStoredValue($order->shipping_address_2) }}</p>
                 @endif
-                <p class="mb-1">
-                    {{ $order->shipping_city_display }},
-                    {{ $order->shipping_state_display }}
-                    {{ $order->shipping_zip }}
-                </p>
+                @if ($order->is_quick_order)
+                    <p class="mb-1">
+                        {{ $order->shipping_city_display }}, {{ $order->shipping_zip }}
+                    </p>
+                @else
+                    <p class="mb-1">
+                        {{ $order->shipping_city_display }},
+                        {{ $order->shipping_state_display }}
+                        {{ $order->shipping_zip }}
+                    </p>
+                @endif
                 <p class="mb-1">{{ $order->shipping_country_name }}</p>
             </div>
         </div>

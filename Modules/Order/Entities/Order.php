@@ -53,7 +53,9 @@ class Order extends Model
 
     public function status()
     {
-        return trans("order::statuses.{$this->status}");
+        return optional($this->orderStatus)->translatedName()
+            ?: optional($this->orderStatus)->name
+                ?: (string) $this->status;
     }
 
 

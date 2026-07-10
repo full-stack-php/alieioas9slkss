@@ -94,8 +94,8 @@ class EmailTemplateRenderer
             '{$order_total}' => $order ? e($order->total->convert($order->currency, $order->currency_rate)->format($order->currency)) : '',
             '{$order_subtotal}' => $order ? e($order->sub_total->convert($order->currency, $order->currency_rate)->format($order->currency)) : '',
             '{$order_discount}' => $order ? e($order->discount->convert($order->currency, $order->currency_rate)->format($order->currency)) : '',
-            '{$shipping_method}' => $order ? e((string) $order->shipping_method) : '',
-            '{$payment_method}' => $order ? e((string) $order->payment_method) : '',
+            '{$shipping_method}' => $order ? e($this->shippingMethodLabel($order)) : '',
+            '{$payment_method}' => $order ? e($this->paymentMethodLabel($order)) : '',
             '{$billing_address}' => $order ? nl2br(e($this->billingAddress($order))) : '',
             '{$shipping_address}' => $order ? nl2br(e($this->shippingAddress($order))) : '',
             '{$cart_weight}' => $order ? e($this->cartWeight($order)) : '',
@@ -250,9 +250,9 @@ class EmailTemplateRenderer
     {
         return collect([
             $order->billing_full_name,
-            $order->billing_address_1,
-            $order->billing_address_2,
-            trim("{$order->billing_city}, {$order->billing_state_name} {$order->billing_zip}"),
+            $order->billing_address_1_display,
+            $order->translateStoredValue($order->billing_address_2),
+            $this->addressCityLine($order, 'billing'),
             $order->billing_country_name,
         ])->filter()->implode("\n");
     }
@@ -261,11 +261,30 @@ class EmailTemplateRenderer
     {
         return collect([
             $order->shipping_full_name,
-            $order->shipping_address_1,
-            $order->shipping_address_2,
-            trim("{$order->shipping_city}, {$order->shipping_state_name} {$order->shipping_zip}"),
+            $order->shipping_address_1_display,
+            $order->translateStoredValue($order->shipping_address_2),
+            $this->addressCityLine($order, 'shipping'),
             $order->shipping_country_name,
         ])->filter()->implode("\n");
+    }
+
+    private function addressCityLine(Order $order, string $type): string
+    {
+        if ($type === 'billing') {
+            $city = $order->billing_city_display;
+            $state = $order->billing_state_display;
+            $zip = $order->billing_zip;
+        } else {
+            $city = $order->shipping_city_display;
+            $state = $order->shipping_state_display;
+            $zip = $order->shipping_zip;
+        }
+
+        if ($order->is_quick_order) {
+            return trim(trim("{$city}, {$zip}"), ',');
+        }
+
+        return trim(trim("{$city}, {$state} {$zip}"), ',');
     }
 
     private function cartWeight(Order $order): string
@@ -529,5 +548,33 @@ class EmailTemplateRenderer
         }
 
         return (string) ($data['product_url'] ?? '');
+    }
+
+    private function shippingMethodLabel(Order $order): string
+    {
+        $method = (string) $order->getRawOriginal('shipping_method');
+
+        $key = "quickorder::quick_order.shipping_methods.{$method}";
+        $translated = trans($key);
+
+        if ($translated !== $key) {
+            return $translated;
+        }
+
+        return (string) $order->shipping_method;
+    }
+
+    private function paymentMethodLabel(Order $order): string
+    {
+        $method = (string) $order->getRawOriginal('payment_method');
+
+        $key = "quickorder::quick_order.payment_methods.{$method}";
+        $translated = trans($key);
+
+        if ($translated !== $key) {
+            return $translated;
+        }
+
+        return (string) $order->payment_method;
     }
 }
