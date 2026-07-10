@@ -195,39 +195,61 @@ class EmailTemplateRenderer
 
     private function firstName($order, $user, array $data): string
     {
-        return (string) (
-            $data['firstname']
-            ?? $data['first_name']
-            ?? $order?->customer_first_name
-            ?? $user?->first_name
-            ?? ''
-        );
+        if (isset($data['firstname'])) {
+            return $this->translateStoredValue($order, $data['firstname']);
+        }
+
+        if (isset($data['first_name'])) {
+            return $this->translateStoredValue($order, $data['first_name']);
+        }
+
+        if ($order) {
+            return $this->translateStoredValue($order, $order->customer_first_name);
+        }
+
+        return (string) ($user?->first_name ?? '');
     }
 
     private function lastName($order, $user, array $data): string
     {
-        return (string) (
-            $data['lastname']
-            ?? $data['last_name']
-            ?? $order?->customer_last_name
-            ?? $user?->last_name
-            ?? ''
-        );
+        if (isset($data['lastname'])) {
+            return $this->translateStoredValue($order, $data['lastname']);
+        }
+
+        if (isset($data['last_name'])) {
+            return $this->translateStoredValue($order, $data['last_name']);
+        }
+
+        if ($order) {
+            return $this->translateStoredValue($order, $order->customer_last_name);
+        }
+
+        return (string) ($user?->last_name ?? '');
     }
 
     private function fullName($order, $user, array $data): string
     {
-        return trim(
-            (string) (
-                $data['fullname']
-                ?? $data['full_name']
-                ?? $this->firstName($order, $user, $data) . ' ' . $this->lastName($order, $user, $data)
-            )
-        );
+        if (isset($data['fullname'])) {
+            return $this->translateStoredText($order, $data['fullname']);
+        }
+
+        if (isset($data['full_name'])) {
+            return $this->translateStoredText($order, $data['full_name']);
+        }
+
+        if ($order) {
+            return (string) $order->customer_full_name;
+        }
+
+        return trim($this->firstName($order, $user, $data) . ' ' . $this->lastName($order, $user, $data));
     }
 
     private function email($order, $user, array $data): string
     {
+        if ($order && $order->is_quick_order_guest) {
+            return $this->quickOrderToBeConfirmed($order);
+        }
+
         return (string) (
             $data['email']
             ?? $order?->customer_email
@@ -579,5 +601,41 @@ class EmailTemplateRenderer
         }
 
         return trans('quickorder::quick_order.to_be_confirmed');
+    }
+
+    private function translateStoredValue($order, mixed $value): string
+    {
+        if (is_null($value)) {
+            return '';
+        }
+
+        $value = (string) $value;
+
+        if ($order instanceof Order) {
+            return (string) $order->translateStoredValue($value);
+        }
+
+        if (str_starts_with($value, 'quickorder::')) {
+            return trans($value);
+        }
+
+        return $value;
+    }
+
+    private function translateStoredText($order, mixed $value): string
+    {
+        if (is_null($value)) {
+            return '';
+        }
+
+        $value = (string) $value;
+
+        if ($order instanceof Order) {
+            return (string) $order->translateStoredText($value);
+        }
+
+        return preg_replace_callback('/quickorder::[A-Za-z0-9_.-]+/', function ($matches) {
+            return trans($matches[0]);
+        }, $value);
     }
 }

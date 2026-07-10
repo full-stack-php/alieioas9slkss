@@ -49,21 +49,9 @@ class QuickOrderService
         $cart->store(
             $request->input('product_id'),
             $request->qty(),
-            $request->input('options', []),
-            $request->input('ch_gifts', []),
-            $request->input('packaging_id')
-        );
-
-        if (!$request->boolean('is_mirrored')) {
-            return;
-        }
-
-        $cart->store(
-            $request->input('product_id'),
-            $request->qty(),
-            $request->input('m_options', []),
             [],
-            $request->input('packaging_id')
+            [],
+            null
         );
     }
 

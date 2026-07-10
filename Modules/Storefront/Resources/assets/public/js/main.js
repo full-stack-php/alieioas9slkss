@@ -408,6 +408,7 @@ $(document).on('click', '.header-cart-backdrop,.header-cart-close', function () 
     }, 100);
 });
 function initMobileSearch() {
+
     $(document).on('click', '.btn-open-search', function () {
         $('#fm-fixed-mobile').removeClass('d-none');
         $('.mobile-sidebar-search__content').append( $('.box-search .header-search') );
@@ -425,7 +426,6 @@ function initMobileSearch() {
     });
 
     $(document).on('click', '.fm-close-search,.sl-bg-search', function () {
-
         $('.mobile-sidebar-search').removeClass('open-search');
         $('#fm-fixed-mobile-bottom').removeClass('z-index-low');
         $('.sl-bg-search').remove();

@@ -16,29 +16,18 @@ class StoreQuickOrderRequest extends Request
 
     public function rules(): array
     {
-        $rules = array_merge(
-            [
-                'product_id' => ['required', 'integer', 'exists:products,id'],
-                'qty' => ['nullable', 'integer', 'min:1'],
-                'phone' => $this->phoneRules(),
-                'comment' => $this->commentRules(),
-                'packaging_id' => ['nullable', 'integer'],
-                'is_mirrored' => ['nullable', 'boolean'],
-                'options' => ['nullable', 'array'],
-                'm_options' => ['nullable', 'array'],
-                'ch_gifts' => ['nullable', 'array'],
-            ],
-            $this->getOptionsRules($this->productOptions(), 'options')
-        );
+        return [
+            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'qty' => ['nullable', 'integer', 'min:1'],
+            'phone' => $this->phoneRules(),
+            'comment' => $this->commentRules(),
 
-        if ($this->boolean('is_mirrored')) {
-            $rules = array_merge(
-                $rules,
-                $this->getOptionsRules($this->productOptions(), 'm_options')
-            );
-        }
-
-        return $rules;
+            'packaging_id' => ['nullable', 'integer'],
+            'is_mirrored' => ['nullable', 'boolean'],
+            'options' => ['nullable', 'array'],
+            'm_options' => ['nullable', 'array'],
+            'ch_gifts' => ['nullable', 'array'],
+        ];
     }
 
     public function validationData(): array

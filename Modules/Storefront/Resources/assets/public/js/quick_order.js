@@ -157,14 +157,7 @@ $(document).ready(function () {
         return {
             product_id: $('#fastorder_data input[name="product_id"]').val(),
             qty: selectedQuantity(),
-            phone: $('#fastorder_data [name="phone"]').val(),
-            comment: $('#fastorder_data [name="comment"]').val(),
-            packaging_id: $('input[name="packaging_id"]:checked').val() || null,
-            is_mirrored: $('#is_mirrored').val() === '1' ? 1 : 0,
-            options: extractOptions(rawOptions, false),
-            m_options: extractOptions(rawOptions, true),
-            ch_gifts: selectedGifts(),
-            gift_packaging_ids: selectedGiftPackagings()
+            phone: $('#fastorder_data [name="phone"]').val()
         };
     }
 
