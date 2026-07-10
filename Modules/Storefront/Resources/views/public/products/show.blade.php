@@ -247,11 +247,15 @@
                                             <span class="text-cart-add">Купить</span>
                                         </button>
                                     </div>
-                                    <button class="btn btn-primary sl-btn-outline-primary btn-fastorder" type="button" onclick="fastorder_open({{ $product->id }});" >
+                                    <button
+                                        class="btn btn-primary sl-btn-outline-primary btn-fastorder js-quick-order-open"
+                                        type="button"
+                                        {{ !$product->isInStock() ? 'disabled' : '' }}
+                                    >
                                         <svg class="icon icon-22">
                                             <use xlink:href="#send"></use>
                                         </svg>
-                                        <span>Быстрый заказ</span>
+                                        <span>{{ trans('storefront::quick_order.button') }}</span>
                                     </button>
                                 </div>
 
@@ -354,6 +358,7 @@
             </div>
         </div>
     </main>
+    @include('storefront::public.products.show.quick_order_modal')
 @endsection
 
 @push('scripts')
@@ -388,6 +393,7 @@
     </script>
 
     @vite([
-        'Modules/Storefront/Resources/assets/public/js/product_page.js'
+    'Modules/Storefront/Resources/assets/public/js/product_page.js',
+    'Modules/Storefront/Resources/assets/public/js/quick_order.js',
     ])
 @endpush

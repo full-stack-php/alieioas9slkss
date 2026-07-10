@@ -40,6 +40,8 @@ class Order extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'deleted_at' => 'datetime',
+        'is_quick_order' => 'boolean',
+        'is_quick_order_guest' => 'boolean',
     ];
 
 

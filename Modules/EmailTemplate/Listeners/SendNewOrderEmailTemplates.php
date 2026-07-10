@@ -26,7 +26,7 @@ class SendNewOrderEmailTemplates
             );
         }
 
-        if (setting('invoice_email') && $order->customer_email) {
+        if (setting('invoice_email') && $order->customer_email && !$this->shouldSkipCustomerMail($order)) {
             $mailer->send(
                 EmailTemplateType::NEW_ORDER,
                 EmailTemplateType::RECIPIENT_CUSTOMER,
@@ -35,5 +35,10 @@ class SendNewOrderEmailTemplates
                 $statusKey
             );
         }
+    }
+
+    private function shouldSkipCustomerMail($order): bool
+    {
+        return (bool) ($order->is_quick_order_guest ?? false);
     }
 }

@@ -1,0 +1,9 @@
+{
+    "name": "QuickOrder",
+    "alias": "quickorder",
+    "description": "The Korf Quick Order Module.",
+    "priority": 100,
+    "providers": [
+        "Modules\\QuickOrder\\Providers\\QuickOrderServiceProvider"
+    ]
+}
