@@ -136,8 +136,8 @@ class QuickOrderService
             'customer_id' => null,
             'email' => 'quick-order-' . now()->format('YmdHis') . '-' . Str::random(8) . '@example.invalid',
             'phone' => $request->input('phone'),
-            'first_name' => trans('quickorder::quick_order.guest_first_name'),
-            'last_name' => trans('quickorder::quick_order.guest_last_name'),
+            'first_name' => 'quickorder::quick_order.guest_first_name',
+            'last_name' => 'quickorder::quick_order.guest_last_name',
         ];
     }
 
@@ -146,10 +146,10 @@ class QuickOrderService
         return [
             'first_name' => $customer['first_name'],
             'last_name' => $customer['last_name'],
-            'address_1' => trans('quickorder::quick_order.address_stub'),
+            'address_1' => 'quickorder::quick_order.address_stub',
             'address_2' => null,
-            'city' => trans('quickorder::quick_order.city_stub'),
-            'state' => trans('quickorder::quick_order.state_stub'),
+            'city' => 'quickorder::quick_order.city_stub',
+            'state' => 'quickorder::quick_order.state_stub',
             'zip' => '00000',
             'country' => 'UA',
         ];
@@ -157,7 +157,7 @@ class QuickOrderService
 
     private function orderNote(StoreQuickOrderRequest $request): string
     {
-        $note = trans('quickorder::quick_order.order_note');
+        $note = 'quickorder::quick_order.order_note';
 
         if ($request->filled('comment')) {
             $note .= "\n\n" . trim($request->input('comment'));

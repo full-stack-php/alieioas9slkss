@@ -25,11 +25,15 @@
             <h5 class="fs-14 fw-medium text-dark mb-2">{{ trans('order::orders.shipping_address') }}</h5>
             <div class="text-muted">
                 <p class="mb-1 text-dark fw-medium">{{ $order->shipping_full_name }}</p>
-                <p class="mb-1">{{ $order->shipping_address_1 }}</p>
+                <p class="mb-1">{{ $order->shipping_address_1_display }}</p>
                 @if ($order->shipping_address_2)
-                    <p class="mb-1">{{ $order->shipping_address_2 }}</p>
+                    <p class="mb-1">{{ $order->translateStoredValue($order->shipping_address_2) }}</p>
                 @endif
-                <p class="mb-1">{{ $order->shipping_city }}, {!! $order->shipping_state_name !!} {{ $order->shipping_zip }}</p>
+                <p class="mb-1">
+                    {{ $order->shipping_city_display }},
+                    {{ $order->shipping_state_display }}
+                    {{ $order->shipping_zip }}
+                </p>
                 <p class="mb-1">{{ $order->shipping_country_name }}</p>
             </div>
         </div>

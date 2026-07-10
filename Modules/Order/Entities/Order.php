@@ -195,19 +195,26 @@ class Order extends Model
 
     public function getCustomerFullNameAttribute()
     {
-        return "{$this->customer_first_name} {$this->customer_last_name}";
+        return trim(
+            $this->translateStoredValue($this->customer_first_name) . ' ' .
+            $this->translateStoredValue($this->customer_last_name)
+        );
     }
-
 
     public function getBillingFullNameAttribute()
     {
-        return "{$this->billing_first_name} {$this->billing_last_name}";
+        return trim(
+            $this->translateStoredValue($this->billing_first_name) . ' ' .
+            $this->translateStoredValue($this->billing_last_name)
+        );
     }
-
 
     public function getShippingFullNameAttribute()
     {
-        return "{$this->shipping_first_name} {$this->shipping_last_name}";
+        return trim(
+            $this->translateStoredValue($this->shipping_first_name) . ' ' .
+            $this->translateStoredValue($this->shipping_last_name)
+        );
     }
 
 
@@ -455,6 +462,78 @@ class Order extends Model
         return trans('storefront::checkout.customer_group_discount_label', [
             'percent' => $percent,
         ]);
+    }
+
+    public function translateStoredValue(?string $value): ?string
+    {
+        if (!$value) {
+            return $value;
+        }
+
+        if ($this->isStoredTranslationKey($value)) {
+            return trans($value);
+        }
+
+        return $value;
+    }
+
+    public function translateStoredText(?string $value): ?string
+    {
+        if (!$value) {
+            return $value;
+        }
+
+        return preg_replace_callback('/quickorder::[A-Za-z0-9_.-]+/', function ($matches) {
+            return trans($matches[0]);
+        }, $value);
+    }
+
+    private function isStoredTranslationKey(?string $value): bool
+    {
+        return is_string($value) && str_starts_with($value, 'quickorder::');
+    }
+
+    public function getDisplayNoteAttribute(): ?string
+    {
+        return $this->translateStoredText($this->note);
+    }
+
+    public function getShippingAddress1DisplayAttribute(): ?string
+    {
+        return $this->translateStoredValue($this->shipping_address_1);
+    }
+
+    public function getShippingCityDisplayAttribute(): ?string
+    {
+        return $this->translateStoredValue($this->shipping_city);
+    }
+
+    public function getShippingStateDisplayAttribute(): ?string
+    {
+        if ($this->isStoredTranslationKey($this->shipping_state)) {
+            return trans($this->shipping_state);
+        }
+
+        return $this->shipping_state_name;
+    }
+
+    public function getBillingAddress1DisplayAttribute(): ?string
+    {
+        return $this->translateStoredValue($this->billing_address_1);
+    }
+
+    public function getBillingCityDisplayAttribute(): ?string
+    {
+        return $this->translateStoredValue($this->billing_city);
+    }
+
+    public function getBillingStateDisplayAttribute(): ?string
+    {
+        if ($this->isStoredTranslationKey($this->billing_state)) {
+            return trans($this->billing_state);
+        }
+
+        return $this->billing_state_name;
     }
 
 }

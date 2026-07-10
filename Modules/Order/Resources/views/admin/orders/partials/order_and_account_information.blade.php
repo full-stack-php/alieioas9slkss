@@ -6,7 +6,7 @@
         @if ($order->note)
             <div class="mb-4 p-3 bg-light rounded">
                 <h5 class="fs-14 fw-medium text-dark mb-1">{{ trans('order::orders.order_note') }}</h5>
-                <p class="mb-0 text-muted">{{ $order->note }}</p>
+                <p class="mb-0 text-muted">{!! nl2br(e($order->display_note)) !!}</p>
             </div>
         @endif
 
