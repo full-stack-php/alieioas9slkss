@@ -106,7 +106,8 @@ if (!function_exists('social_links')) {
     function social_links()
     {
         return collect([
-            'lab la-facebook' => setting('storefront_facebook_link'),
+            'lab la-facebook-messenger' => setting('storefront_facebook_link'),
+            'lab la-facebook' => setting('storefront_facebook_page_link'),
             'lab la-twitter' => setting('storefront_twitter_link'),
             'lab la-instagram' => setting('storefront_instagram_link'),
             'lab la-youtube' => setting('storefront_youtube_link'),
@@ -127,6 +128,7 @@ if (!function_exists('social_link_name')) {
     function social_link_name($icon)
     {
         return [
+            'lab la-facebook-messenger' => trans('storefront::storefront.social_links.messenger'),
             'lab la-facebook' => trans('storefront::storefront.social_links.facebook'),
             'lab la-twitter' => trans('storefront::storefront.social_links.twitter'),
             'lab la-instagram' => trans('storefront::storefront.social_links.instagram'),

@@ -31,6 +31,11 @@ return [
     'storefront_viber_link' => 'Viber',
     'storefront_telegram_link' => 'Telegram',
     'storefront_whatsapp_link' => 'Whatsapp',
+    'storefront_facebook_page_link' => 'Страница Facebook',
+    'storefront_instagram_link' => 'Instagram',
+    'storefront_youtube_link' => 'YouTube',
+    'storefront_mobile_menu_working_hours' => 'Время работы в мобильном меню',
+
     'caption_1' => 'Caption 1',
     'caption_2' => 'Caption 2',
     'call_to_action_url' => 'Call to Action URL',

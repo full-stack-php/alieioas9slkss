@@ -115,10 +115,13 @@ class StorefrontTabs extends Tabs
             $tab->weight(15);
 
             $tab->fields([
+                'storefront_catalog_menu',
                 'storefront_primary_menu',
-                'storefront_category_menu',
-                'storefront_footer_menu',
-                'storefront_footer_menu_title',
+                'storefront_footer_menu_one',
+                'storefront_footer_menu_two',
+                'storefront_footer_menu_three',
+                'storefront_mobile_menu',
+                'storefront_mobile_menu_working_hours',
             ]);
 
             $tab->view('storefront::admin.storefront.tabs.menus', [
@@ -200,13 +203,13 @@ class StorefrontTabs extends Tabs
             $tab->weight(25);
 
             $tab->fields([
-                'storefront_fb_link',
-                'storefront_twitter_link',
+                'storefront_facebook_link',
+                'storefront_facebook_page_link',
                 'storefront_instagram_link',
-                'storefront_linkedin_link',
-                'storefront_pinterest_link',
-                'storefront_gplus_link',
                 'storefront_youtube_link',
+                'storefront_viber_link',
+                'storefront_telegram_link',
+                'storefront_whatsapp_link',
             ]);
 
             $tab->view('storefront::admin.storefront.tabs.social_links');

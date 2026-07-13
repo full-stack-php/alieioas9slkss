@@ -146,6 +146,8 @@
 
         @include('storefront::public.layouts.header')
 
+        @include('storefront::public.layouts.mobile_menu')
+
         @yield('content')
         @stack('pre-scripts')
 

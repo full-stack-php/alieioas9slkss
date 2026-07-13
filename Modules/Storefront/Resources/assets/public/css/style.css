@@ -2111,11 +2111,11 @@ header .text-a-icon-cart  {
     background: transparent;
 }
 .sl-bg-mob {
-    z-index: 1008;
+    z-index: 1012;
 }
 .sl-bg-search,
 .sl-bg.z-v3 {
-    z-index: 1006;
+    z-index: 1012;
 }
 .sl-bg.z-v4,
 .up-bg-viewed {
@@ -6773,6 +6773,9 @@ footer .gmap iframe {
     .mobile-sidebar-phones__dropdown,
     .mobile-sidebar-phones__dropdown li + li {
         border-top: 1px dashed var(--color-gray-light);
+    }
+    .mobile-sidebar-phones__icon-image {
+        margin-right: 10px;
     }
     .mobile-sidebar-phones__dropdown li > a,
     .mobile-sidebar-phones__dropdown li > div {

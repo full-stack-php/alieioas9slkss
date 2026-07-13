@@ -287,4 +287,32 @@ class LayoutComposer
     {
         return setting('storefront_show_repeat_btn')?? false;
     }
+
+    private function getMobileMenuSocialLinks()
+    {
+        return collect([
+            'messenger' => [
+                'name' => trans('storefront::storefront.social_links.messenger'),
+                'url' => setting('storefront_facebook_link'),
+                'icon' => 'lab la-facebook-messenger',
+            ],
+            'facebook' => [
+                'name' => trans('storefront::storefront.social_links.facebook'),
+                'url' => setting('storefront_facebook_page_link'),
+                'icon' => 'lab la-facebook-f',
+            ],
+            'instagram' => [
+                'name' => trans('storefront::storefront.social_links.instagram'),
+                'url' => setting('storefront_instagram_link'),
+                'icon' => 'lab la-instagram',
+            ],
+            'youtube' => [
+                'name' => trans('storefront::storefront.social_links.youtube'),
+                'url' => setting('storefront_youtube_link'),
+                'icon' => 'lab la-youtube',
+            ],
+        ])->filter(function ($item) {
+            return !empty($item['url']);
+        });
+    }
 }

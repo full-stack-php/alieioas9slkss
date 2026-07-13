@@ -114,6 +114,7 @@ return [
         'schema_general' => 'Микроразметка',
     ],
     'social_links' => [
+        'messenger' => 'Messenger',
         'facebook' => 'Facebook',
         'twitter' => 'Twitter',
         'instagram' => 'Instagram',

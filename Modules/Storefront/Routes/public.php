@@ -8,6 +8,8 @@ Route::get('storefront/product-grid/tabs/{tabNumber}', 'ProductGridController@in
 Route::get('storefront/flash-sale-products', 'FlashSaleProductController@index')->name('storefront.flash_sale_products.index');
 Route::get('storefront/vertical-products/{columnNumber}', 'VerticalProductController@index')->name('storefront.vertical_products.index');
 
+Route::get('storefront/mobile-menu', 'MobileMenuController@index')->name('storefront.mobile_menu.index');
+
 Route::delete('storefront/newsletter-popup', 'NewsletterPopup@destroy')->name('storefront.newsletter_popup.destroy');
 
 Route::delete('storefront/cookie-bar', 'CookieBarController@destroy')->name('storefront.cookie_bar.destroy');

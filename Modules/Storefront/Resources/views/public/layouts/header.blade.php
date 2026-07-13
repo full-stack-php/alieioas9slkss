@@ -3,8 +3,11 @@
         <div class="d-flex align-items-center pt-xs-5 pb-xs-5 pt-md-15 pb-md-15">
             <div class="up-header__left d-flex align-items-center">
 
-                <button aria-label="Меню" type="button" class="up-header__btn-mobile-menu btn btn-menu-mobile hidden-md d-xl-none" onclick="open_mob_menu_left()">
-                    <i class="up-icon-22 up-icon-menu-line" aria-hidden="true"></i>
+                <button
+                    aria-label="{{ trans('storefront::layouts.open_mobile_menu') }}"
+                    type="button"
+                    class="up-header__btn-mobile-menu btn btn-menu-mobile js-open-mobile-menu hidden-md d-xl-none"
+                >
                     <svg class="icon icon-22">
                         <use xlink:href="#bar"></use>
                     </svg>
