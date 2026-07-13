@@ -29,6 +29,7 @@ function initialFormData() {
         special_price_end: null,
         sku: null,
         manage_stock: 0,
+        stock_status: 0,
         qty: null,
         in_stock: 1,
         slug: null,

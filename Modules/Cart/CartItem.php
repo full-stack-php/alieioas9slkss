@@ -188,6 +188,7 @@ class CartItem implements JsonSerializable
     {
         return Product::withName()
             ->addSelect('id', 'in_stock', 'manage_stock', 'qty', 'is_active', 'price',
+                'stock_status',
                 'special_price',
                 'special_price_type',
                 'special_price_start',

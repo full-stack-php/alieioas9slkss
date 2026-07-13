@@ -54,6 +54,20 @@ class CheckItemStock
             return $next($request);
         }
 
+        if ($this->item->isPreorder()) {
+            return response()->json([
+                'message' => trans('cart::messages.preorder_only'),
+                'cart' => Cart::instance(),
+            ], 400);
+        }
+
+        if ($this->item->isDiscontinued()) {
+            return response()->json([
+                'message' => trans('cart::messages.discontinued'),
+                'cart' => Cart::instance(),
+            ], 400);
+        }
+
         if ($this->item->isOutOfStock()) {
             return response()->json([
                 'message' => trans('cart::messages.out_of_stock'),
@@ -80,6 +94,7 @@ class CheckItemStock
                 'id',
                 'in_stock',
                 'manage_stock',
+                'stock_status',
                 'qty',
                 'price',
                 'special_price',

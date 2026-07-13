@@ -96,27 +96,7 @@
                                 <div class="info-product d-flex flex-wrap">
                                     <div class="col-6 d-flex flex-column flex-wrap no-gutters">
                                         <div class="info-product-stock d-flex">
-                                            @if($product->isInStock())
-                                                @if($product->manage_stock)
-                                                    @if($product->qty > 0)
-                                                        <div class="stock-status up-icon  instock">
-                                                            {{ trans('storefront::product.in_stock') }}
-                                                        </div>
-                                                    @else
-                                                        <div class="stock-status up-icon  outofstock">
-                                                            {{ trans('storefront::product.out_of_stock') }}
-                                                        </div>
-                                                    @endif
-                                                @else
-                                                    <div class="stock-status up-icon instock">
-                                                        {{ trans('storefront::product.in_stock') }}
-                                                    </div>
-                                                @endif
-                                            @else
-                                                <div class="stock-status up-icon outofstock">
-                                                    {{ trans('storefront::product.out_of_stock') }}
-                                                </div>
-                                            @endif
+                                            @include('storefront::public.products.show.availability')
                                         </div>
                                         <div class="info-model">{{ trans('storefront::product.article') }}:  <span>{{ $product->sku }}</span></div>
                                     </div>
@@ -205,63 +185,9 @@
                                 </div>
 
 
-                                <div class="action-group d-flex flex-wrap">
-                                    <div class="quantity-adder">
-                                        <div class="quantity-number d-flex">
-                                            <span onclick="btnminus_card_prod(1);" class="add-down add-action">
-                                                <svg class="icon icon-14">
-                                                    <use xlink:href="#angel-left"></use>
-                                                </svg>
-                                            </span>
-                                            <input autocomplete="off" aria-label="Quantity"  class="quantity-product" type="text" name="quantity" size="2" value="1" />
-                                            <span onclick="btnplus_card_prod(1);" class="add-up add-action">
-                                                <svg class="icon icon-14">
-                                                    <use xlink:href="#angel-right"></use>
-                                                </svg>
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <script>
-                                        function btnminus_card_prod(minimum){
-                                            var $input = $('.quantity-adder .quantity-product');
-                                            var count = parseInt($input.val()) - parseInt(minimum);
-                                            count = count < parseInt(1) ? parseInt(1) : count;
-                                            $input.val(count);
-                                            $input.change();
-                                        }
-                                        function btnplus_card_prod(minimum){
-                                            var $input = $('.quantity-adder .quantity-product');
-                                            var count = parseInt($input.val()) + parseInt(minimum);
-                                            $input.val(count);
-                                            $input.change();
-                                        };
-                                    </script>
-
-
-                                    <input type="hidden" name="product_id" value="{{ $product->id }}" />
-                                    <div class="cart">
-                                        <button type="button" id="button-cart" class="btn btn-primary">
-                                            <svg class="icon icon-22">
-                                                <use xlink:href="#cart"></use>
-                                            </svg>
-                                            <span class="text-cart-add">Купить</span>
-                                        </button>
-                                    </div>
-                                    <button
-                                        class="btn btn-primary sl-btn-outline-primary btn-fastorder js-quick-order-open"
-                                        type="button"
-                                        {{ !$product->isInStock() ? 'disabled' : '' }}
-                                    >
-                                        <svg class="icon icon-22">
-                                            <use xlink:href="#send"></use>
-                                        </svg>
-                                        <span>{{ trans('storefront::quick_order.button') }}</span>
-                                    </button>
-                                </div>
+                                @include('storefront::public.products.show.purchase_actions')
 
                                 @include('storefront::public.products.show.info_sticker')
-
-                                @include('storefront::public.products.show.bundle')
 
                                 @if ($relatedProducts->isNotEmpty())
                                     <div class="mt-5">
@@ -359,6 +285,15 @@
         </div>
     </main>
     @include('storefront::public.products.show.quick_order_modal')
+
+    @if($productAvailability['is_preorder'])
+        @include('storefront::public.products.show.preorder_modal')
+    @endif
+
+    @if(!$productAvailability['is_preorder'] && !$productAvailability['is_discontinued'])
+        @include('storefront::public.products.show.quick_order_modal')
+    @endif
+
 @endsection
 
 @push('scripts')
@@ -395,5 +330,6 @@
     @vite([
     'Modules/Storefront/Resources/assets/public/js/product_page.js',
     'Modules/Storefront/Resources/assets/public/js/quick_order.js',
+    'Modules/Storefront/Resources/assets/public/js/preorder.js',
     ])
 @endpush

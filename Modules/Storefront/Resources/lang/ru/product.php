@@ -70,4 +70,5 @@ return [
     'colors_products' => 'Другие варианты',
     'show_more' => 'Show More',
     'show_less' => 'Show Less',
+    'buy' => 'Купить',
 ];

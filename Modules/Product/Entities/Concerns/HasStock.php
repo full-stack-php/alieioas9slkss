@@ -2,6 +2,8 @@
 
 namespace Modules\Product\Entities\Concerns;
 
+use Modules\Product\Entities\Product;
+
 trait HasStock
 {
     public function isOutOfStock(): bool
@@ -9,29 +11,61 @@ trait HasStock
         return !$this->isInStock();
     }
 
-
-    public function isInStock()
+    public function isInStock(): bool
     {
-        if ($this->manage_stock && $this->qty === 0) {
+        if ($this->isPreorder() || $this->isDiscontinued()) {
             return false;
         }
 
-        return $this->in_stock;
+        if ($this->manage_stock && (int) $this->qty <= 0) {
+            return false;
+        }
+
+        return (bool) $this->in_stock;
     }
 
+    public function isPurchasable(): bool
+    {
+        return !$this->isPreorder()
+            && !$this->isDiscontinued()
+            && $this->isInStock();
+    }
+
+    public function isPreorder(): bool
+    {
+        return (int) $this->stock_status === Product::STOCK_STATUS_PREORDER;
+    }
+
+    public function isDiscontinued(): bool
+    {
+        return (int) $this->stock_status === Product::STOCK_STATUS_DISCONTINUED;
+    }
+
+    public function tracksStock(): bool
+    {
+        return (int) $this->stock_status === Product::STOCK_STATUS_TRACKED;
+    }
+
+    public function doesNotTrackStock(): bool
+    {
+        return (int) $this->stock_status === Product::STOCK_STATUS_NOT_TRACKED;
+    }
 
     public function markAsInStock(): void
     {
         $this->withoutEvents(function () {
-            $this->update(['in_stock' => true]);
+            $this->update([
+                'in_stock' => true,
+            ]);
         });
     }
-
 
     public function markAsOutOfStock(): void
     {
         $this->withoutEvents(function () {
-            $this->update(['in_stock' => false]);
+            $this->update([
+                'in_stock' => false,
+            ]);
         });
     }
 }

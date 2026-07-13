@@ -28,6 +28,18 @@ use function Symfony\Component\Translation\t;
 
 class Product extends Model implements Sitemapable
 {
+    public const STOCK_STATUS_NOT_TRACKED = 0;
+    public const STOCK_STATUS_TRACKED = 1;
+    public const STOCK_STATUS_PREORDER = 2;
+    public const STOCK_STATUS_DISCONTINUED = 3;
+
+    public const STOCK_STATUSES = [
+        self::STOCK_STATUS_NOT_TRACKED,
+        self::STOCK_STATUS_TRACKED,
+        self::STOCK_STATUS_PREORDER,
+        self::STOCK_STATUS_DISCONTINUED,
+    ];
+
     use Translatable,
         Searchable,
         Filterable,
@@ -70,6 +82,7 @@ class Product extends Model implements Sitemapable
         'special_price_end',
         'selling_price',
         'manage_stock',
+        'stock_status',
         'qty',
         'in_stock',
         'is_mirrored',
@@ -86,6 +99,10 @@ class Product extends Model implements Sitemapable
      * @var array
      */
     protected $casts = [
+        'manage_stock' => 'boolean',
+        'stock_status' => 'integer',
+        'qty' => 'integer',
+        'in_stock' => 'boolean',
         'is_mirrored' => 'boolean',
         'is_active' => 'boolean',
         'special_price_start' => 'datetime',
@@ -345,7 +362,7 @@ class Product extends Model implements Sitemapable
             ->withName()
             ->withBaseImage()
             ->withPrice()
-            ->addSelect(['id', 'is_active', 'in_stock', 'manage_stock', 'qty', 'created_at', 'updated_at'])
+            ->addSelect(['id', 'is_active', 'in_stock', 'manage_stock', 'stock_status', 'qty', 'created_at', 'updated_at'])
             ->when($request->has('except'), function ($query) use ($request) {
                 $query->whereNotIn('id', explode(',', $request->except));
             });

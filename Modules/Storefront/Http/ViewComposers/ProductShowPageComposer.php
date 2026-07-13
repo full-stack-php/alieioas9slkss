@@ -30,6 +30,11 @@ class ProductShowPageComposer
             'productSchemaMarkup' => $this->schemaMarkup($product),
             'categoryBreadcrumb' => $this->getCategoryBreadCrumb($product->categories->nest()),
             'allProductNotification' => setting('storefront_product_notify_message_status') ? setting('storefront_product_notify_message') : false,
+            'productAvailability' => [
+                'is_preorder' => $product->isPreorder(),
+                'is_discontinued' => $product->isDiscontinued(),
+                'is_purchasable' => $product->isPurchasable(),
+            ],
         ]);
     }
 
@@ -70,12 +75,31 @@ class ProductShowPageComposer
     private function offersSchema(Product $product)
     {
         return Schema::offer()
-            ->price(($product->variant ?? $product)->selling_price->convertToCurrentCurrency()->amount())
+            ->price(
+                ($product->variant ?? $product)
+                    ->selling_price
+                    ->convertToCurrentCurrency()
+                    ->amount()
+            )
             ->priceCurrency(currency())
-            ->availability($product->isInStock() ? ItemAvailability::InStock : ItemAvailability::OutOfStock)
+            ->availability($this->itemAvailability($product))
             ->url($product->url());
     }
 
+    private function itemAvailability(Product $product): string
+    {
+        if ($product->isPreorder()) {
+            return ItemAvailability::PreOrder;
+        }
+
+        if ($product->isDiscontinued()) {
+            return ItemAvailability::Discontinued;
+        }
+
+        return $product->isInStock()
+            ? ItemAvailability::InStock
+            : ItemAvailability::OutOfStock;
+    }
 
     private function getCategoryBreadCrumb(Collection $categories)
     {

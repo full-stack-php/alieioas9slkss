@@ -54,7 +54,7 @@ class StoreQuickOrderRequest extends Request
         $validator->after(function ($validator) {
             $product = $this->product();
 
-            if (!$product || !$product->is_active || !$product->isInStock()) {
+            if (!$product || !$product->is_active || !$product->isPurchasable()) {
                 $validator->errors()->add('product_id', trans('quickorder::messages.product_unavailable'));
 
                 return;

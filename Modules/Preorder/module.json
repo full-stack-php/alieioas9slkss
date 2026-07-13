@@ -1,0 +1,6 @@
+{
+    "name": "Preorder",
+    "alias": "preorder",
+    "description": "The Korf Preorder Module.",
+    "priority": 100
+}

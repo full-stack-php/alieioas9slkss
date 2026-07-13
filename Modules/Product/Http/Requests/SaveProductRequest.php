@@ -91,9 +91,6 @@ class SaveProductRequest extends Request
                 'special_price_type' => ['nullable', Rule::in(['fixed', 'percent'])],
                 'special_price_start' => 'nullable|date|before:special_price_end',
                 'special_price_end' => 'nullable|date|after:special_price_start',
-                'manage_stock' => 'required|boolean',
-                'qty' => 'required_if:manage_stock,1|nullable|numeric',
-                'in_stock' => 'required|boolean',
                 'new_from' => 'nullable|date',
                 'new_to' => 'nullable|date',
                 'is_mirrored' => 'nullable|boolean',
@@ -128,10 +125,40 @@ class SaveProductRequest extends Request
 
     protected function prepareForValidation()
     {
+        $stockStatus = (int) $this->input(
+            'stock_status',
+            Product::STOCK_STATUS_NOT_TRACKED
+        );
+
+        $hasVariants = collect((array) $this->input('variants', []))
+            ->filter(function ($variant) {
+                return is_array($variant) && !empty($variant);
+            })
+            ->isNotEmpty();
+
         $data = [
-            'is_mirrored' => $this->has('is_mirrored') ? $this->get('is_mirrored') === 'on' : false,
-            'is_active' => $this->has('is_active') ? $this->get('is_active') === 'on' : false,
+            'is_mirrored' => $this->has('is_mirrored')
+                ? $this->get('is_mirrored') === 'on'
+                : false,
+
+            'is_active' => $this->has('is_active')
+                ? $this->get('is_active') === 'on'
+                : false,
+
+            'stock_status' => $stockStatus,
+
+            // У вариантных товаров остатки продолжают храниться у вариантов.
+            'manage_stock' => !$hasVariants
+                && $stockStatus === Product::STOCK_STATUS_TRACKED,
         ];
+
+        if (in_array($stockStatus, [
+            Product::STOCK_STATUS_PREORDER,
+            Product::STOCK_STATUS_DISCONTINUED,
+        ], true)) {
+            $data['qty'] = null;
+            $data['in_stock'] = false;
+        }
 
         if (array_key_exists('1c_id', $this->all())) {
             $data['1c_id'] = $this->filled('1c_id')
@@ -146,9 +173,28 @@ class SaveProductRequest extends Request
     public function getInventoryRules(): array
     {
         return [
-            'manage_stock' => 'required|boolean',
-            'qty' => 'required_if:manage_stock,1|nullable|numeric',
-            'in_stock' => 'required|boolean',
+            'stock_status' => [
+                'required',
+                'integer',
+                Rule::in(Product::STOCK_STATUSES),
+            ],
+
+            'manage_stock' => [
+                'required',
+                'boolean',
+            ],
+
+            'qty' => [
+                'required_if:manage_stock,1',
+                'nullable',
+                'integer',
+                'min:0',
+            ],
+
+            'in_stock' => [
+                'required',
+                'boolean',
+            ],
         ];
     }
 

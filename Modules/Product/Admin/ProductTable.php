@@ -40,10 +40,27 @@ class ProductTable extends AdminTable
                 });
             })
             ->editColumn('in_stock', function (Product $product) {
-                $item = $product;
-                $in_stock = $item->in_stock && (!$item->manage_stock || $item->qty > 0);
+                if ($product->isPreorder()) {
+                    return "<span class='badge badge-soft-warning rounded-pill me-1'>"
+                        . trans('product::products.form.manage_stock_states.2')
+                        . '</span>';
+                }
 
-                return $in_stock ? "<span class='badge badge-soft-success rounded-pill me-1'>" . trans('product::products.form.stock_availability_states.1') . "</span>" : "<span class='badge badge-soft-danger rounded-pill me-1'>" . trans('product::products.form.stock_availability_states.0') . "</span>";
+                if ($product->isDiscontinued()) {
+                    return "<span class='badge badge-soft-secondary rounded-pill me-1'>"
+                        . trans('product::products.form.manage_stock_states.3')
+                        . '</span>';
+                }
+
+                if ($product->isInStock()) {
+                    return "<span class='badge badge-soft-success rounded-pill me-1'>"
+                        . trans('product::products.form.stock_availability_states.1')
+                        . '</span>';
+                }
+
+                return "<span class='badge badge-soft-danger rounded-pill me-1'>"
+                    . trans('product::products.form.stock_availability_states.0')
+                    . '</span>';
             });
     }
 }

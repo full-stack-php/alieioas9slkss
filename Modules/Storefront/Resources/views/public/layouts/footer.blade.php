@@ -152,10 +152,12 @@
             routes: {
                 cart_add: '{{ route('cart.items.store') }}',
                 cart_get: '{{ route('cart.get') }}',
+                preorder: '{{ route('preorder.store') }}',
                 login_modal: '{{ route('login.modal') }}',
                 quick_order: '{{ route('quick_order.store') }}',
             },
             quick_order_error: @json(trans('storefront::quick_order.error')),
+            preorder_error: @json(trans('storefront::preorder.error')),
             openLoginModal: @json((bool) session('open_login_modal')),
             sessionExpiredMessage: @json(session('session_expired_message', trans('user::messages.users.session_expired')))
         }

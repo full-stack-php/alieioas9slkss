@@ -35,13 +35,12 @@ trait QueryScopes
 
     public function scopeWithStock($query): void
     {
-        $query->addSelect(
-            [
-                'products.in_stock',
-                'products.manage_stock',
-                'products.qty',
-            ]
-        );
+        $query->addSelect([
+            'products.in_stock',
+            'products.manage_stock',
+            'products.stock_status',
+            'products.qty',
+        ]);
     }
 
 

@@ -34,6 +34,7 @@ class ProductEditResource extends JsonResource
             'tax_class_id' => $this->tax_class_id ?? '',
             'sku' => $this->sku,
             'manage_stock' => $this->manage_stock,
+            'stock_status' => $this->stock_status,
             'qty' => $this->qty,
             'in_stock' => $this->in_stock,
             'special_price_type' => $this->special_price_type,

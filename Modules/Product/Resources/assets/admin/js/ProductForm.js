@@ -6,11 +6,19 @@ export default class {
     }
 
     managerStock() {
-        $('#manage_stock').on('change', (e) => {
-            if (e.currentTarget.value === '1') {
+        $('#stock_status').on('change', (e) => {
+            const status = Number(e.currentTarget.value);
+
+            if (status === 1) {
                 $('#qty-field').removeClass('hide');
             } else {
                 $('#qty-field').addClass('hide');
+            }
+
+            if ([0, 1].includes(status)) {
+                $('#in-stock-field').removeClass('hide');
+            } else {
+                $('#in-stock-field').addClass('hide');
             }
         });
     }

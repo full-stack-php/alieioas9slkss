@@ -72,7 +72,7 @@ class StoreCartItemRequest extends Request
         $product_id = request()->input('product_id');
 
         return Product::with('options')
-            ->select('id', 'manage_stock', 'qty', 'is_active')
+            ->select('id', 'manage_stock', 'stock_status', 'qty', 'is_active')
             ->find($product_id);
     }
 

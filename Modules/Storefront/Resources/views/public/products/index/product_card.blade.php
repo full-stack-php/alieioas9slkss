@@ -94,23 +94,18 @@
         @include('storefront::public.partials.product_rating', ['rating' => $product->avg_rating])
 
         <div class="product_model_sstatus mb-10">
-            <div class="product-model">Код Товара:482381</div>
-            @if($product->isInStock())
-                @if($product->manage_stock)
-                    @if($product->qty > 0)
-                        <div class="stock-status up-icon  instock">
-                            {{ trans('storefront::product.in_stock') }}
-                        </div>
-                    @else
-                        <div class="stock-status up-icon  outofstock">
-                            {{ trans('storefront::product.out_of_stock') }}
-                        </div>
-                    @endif
-                @else
-                    <div class="stock-status up-icon instock">
-                        {{ trans('storefront::product.in_stock') }}
-                    </div>
-                @endif
+            @if($product->isPreorder())
+                <div class="stock-status up-icon preorder">
+                    {{ trans('storefront::preorder.status') }}
+                </div>
+            @elseif($product->isDiscontinued())
+                <div class="stock-status up-icon discontinued">
+                    {{ trans('storefront::preorder.discontinued') }}
+                </div>
+            @elseif($product->isInStock())
+                <div class="stock-status up-icon instock">
+                    {{ trans('storefront::product.in_stock') }}
+                </div>
             @else
                 <div class="stock-status up-icon outofstock">
                     {{ trans('storefront::product.out_of_stock') }}
@@ -123,12 +118,34 @@
                 {!! $product->formatted_price !!}
             </div>
             <div class="cart">
-                <button aria-label="Add to cart" class="btn btn-primary add_to_cart" type="button">
-                    <svg class="icon icon-22">
-                        <use xlink:href="#cart"></use>
-                    </svg>
-                    <span class="text-cart-add">Купить</span>
-                </button>
+                @if($product->isPreorder())
+                    <a
+                        href="{{ $product->url() }}"
+                        class="btn btn-primary"
+                    >
+            <span class="text-cart-add">
+                {{ trans('storefront::preorder.button') }}
+            </span>
+                    </a>
+                @elseif($product->isDiscontinued())
+                    <span class="product-card-discontinued">
+            {{ trans('storefront::preorder.discontinued') }}
+        </span>
+                @else
+                    <button
+                        aria-label="{{ trans('storefront::product.buy') }}"
+                        class="btn btn-primary add_to_cart"
+                        type="button"
+                    >
+                        <svg class="icon icon-22">
+                            <use xlink:href="#cart"></use>
+                        </svg>
+
+                        <span class="text-cart-add">
+                {{ trans('storefront::product.buy') }}
+            </span>
+                    </button>
+                @endif
             </div>
         </div>
     </div>
@@ -213,17 +230,31 @@
         </div>
 
         <div class="product-card-actions-parent">
-            @if($product->options_count === 0 || $product->isOutOfStock())
+            @if($product->isPreorder())
+                <a
+                    href="{{ $product->url() }}"
+                    class="btn btn-default btn-add-to-cart"
+                >
+                    {{ trans('storefront::preorder.button') }}
+                </a>
+            @elseif($product->isDiscontinued())
+                <div class="product-card-discontinued">
+                    {{ trans('storefront::preorder.discontinued') }}
+                </div>
+            @elseif($product->options_count === 0 || $product->isOutOfStock())
                 <button
                     class="btn btn-default btn-add-to-cart"
                     {{ $product->isOutOfStock() ? 'disabled' : '' }}
                     data-product-id="{{ $product->id }}"
                 >
-                    {{ trans("storefront::product_card.add_to_cart") }}
+                    {{ trans('storefront::product_card.add_to_cart') }}
                 </button>
             @else
-                <a href="{{ $product->url() }}" class="btn btn-default btn-add-to-cart">
-                    {{ trans("storefront::product_card.view_options") }}
+                <a
+                    href="{{ $product->url() }}"
+                    class="btn btn-default btn-add-to-cart"
+                >
+                    {{ trans('storefront::product_card.view_options') }}
                 </a>
             @endif
         </div>
