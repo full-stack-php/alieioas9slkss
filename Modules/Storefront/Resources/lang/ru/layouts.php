@@ -58,4 +58,6 @@ return [
     'open_mobile_menu' => 'Открыть мобильное меню',
     'mobile_menu_empty' => 'Мобильное меню не настроено',
     'mobile_menu_load_error' => 'Не удалось загрузить мобильное меню',
+    'open_submenu' => 'Открыть подменю',
+    'social_networks' => 'Мы в соц. сетях',
 ];

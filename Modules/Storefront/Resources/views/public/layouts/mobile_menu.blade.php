@@ -114,7 +114,7 @@
                     <div class="mobm-body"></div>
                 </div>
                 @if ($repeat_btn)
-                    <div class="mob-reoder">
+                    <div class="mob-reoder mt-5">
                         <div class="reorder_inner">
                             <button class="btn btn-primary btn-lg w-100" type="button">
                                 {{ trans('storefront::layouts.repeat_latest_order_btn') }}
@@ -123,19 +123,13 @@
                     </div>
                 @endif
 
-                @if (!empty($mobileMenuWorkingHours))
-                    <div class="desc_info_mob">
-                        {!! $mobileMenuWorkingHours !!}
-                    </div>
-                @endif
-
                 @if ($mobileMenuSocialLinks->isNotEmpty())
                     <div class="mobile-menu-socials">
-                        <div class="mobile-menu-socials__title">
+                        <div class="mobile-menu-socials__title mb-3">
                             {{ trans('storefront::layouts.social_networks') }}
                         </div>
 
-                        <ul class="mobile-menu-socials__list list-unstyled">
+                        <ul class="mobile-menu-socials__list list-unstyled d-flex flex-row gap-4">
                             @foreach ($mobileMenuSocialLinks as $social)
                                 <li class="mobile-menu-socials__item">
                                     <a
@@ -145,12 +139,19 @@
                                         class="mobile-menu-socials__link"
                                         aria-label="{{ $social['name'] }}"
                                     >
-                                        <i class="{{ $social['icon'] }}"></i>
-                                        <span>{{ $social['name'] }}</span>
+                                        <svg class="icon icon-32 icon-mob-menu">
+                                            <use xlink:href="#{{ $social['icon'] }}"></use>
+                                        </svg>
                                     </a>
                                 </li>
                             @endforeach
                         </ul>
+                    </div>
+                @endif
+
+                @if (!empty($mobileMenuWorkingHours))
+                    <div class="desc_info_mob">
+                        {!! $mobileMenuWorkingHours !!}
                     </div>
                 @endif
             </div>

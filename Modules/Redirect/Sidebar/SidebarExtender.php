@@ -12,13 +12,15 @@ class SidebarExtender extends BaseSidebarExtender
     public function extend(Menu $menu)
     {
         $menu->group(trans('admin::sidebar.system'), function (Group $group) {
-            $group->item(trans('redirect::sidebar.redirects'), function (Item $item) {
-                $item->icon('routing-2-bold-duotone');
-                $item->weight(25);
-                $item->route('admin.redirects.index');
-                $item->authorize(
-                    $this->auth->hasAccess('admin.redirects.index')
-                );
+            $group->item(trans('admin::sidebar.tools'), function (Item $item) {
+                $item->item(trans('redirect::sidebar.redirects'), function (Item $item) {
+                    $item->weight(25);
+                    $item->setItemClass('sub-nav-item');
+                    $item->route('admin.redirects.index');
+                    $item->authorize(
+                        $this->auth->hasAccess('admin.redirects.index')
+                    );
+                });
             });
         });
     }

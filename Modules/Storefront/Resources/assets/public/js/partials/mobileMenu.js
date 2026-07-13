@@ -1,4 +1,17 @@
 export function initMobileMenu() {
+
+    function preloadMobileMenu() {
+        if (document.readyState === 'complete') {
+            loadMobileMenu();
+
+            return;
+        }
+
+        window.addEventListener('load', function () {
+            loadMobileMenu();
+        }, { once: true });
+    }
+
     function getMobileMenuData() {
         const fixedMobile = document.getElementById('fm-fixed-mobile');
 
@@ -154,6 +167,7 @@ export function initMobileMenu() {
         }, 500);
     });
 
+    preloadMobileMenu();
     window.open_mob_menu_left = openMobMenuLeft;
     window.close_mob_menu = closeMobMenu;
 }

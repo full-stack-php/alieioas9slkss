@@ -12,13 +12,15 @@ class SidebarExtender extends BaseSidebarExtender
     public function extend(Menu $menu)
     {
         $menu->group(trans('admin::sidebar.system'), function (Group $group) {
-            $group->item(trans('emailtemplate::sidebar.email_templates'), function (Item $item) {
-                $item->icon('letter-bold-duotone');
-                $item->weight(26);
-                $item->route('admin.email_templates.index');
-                $item->authorize(
-                    $this->auth->hasAccess('admin.email_templates.index')
-                );
+            $group->item(trans('admin::sidebar.tools'), function (Item $item) {
+                $item->item(trans('emailtemplate::sidebar.email_templates'), function (Item $item) {
+                    $item->weight(26);
+                    $item->setItemClass('sub-nav-item');
+                    $item->route('admin.email_templates.index');
+                    $item->authorize(
+                        $this->auth->hasAccess('admin.email_templates.index')
+                    );
+                });
             });
         });
     }

@@ -825,6 +825,12 @@ header{
 .icon-w-10{
     width: 10px;
 }
+.icon-mob-menu{
+    fill: var(--color-primary);
+}
+.mobile-menu-socials__title{
+    color: var(--color-gray);
+}
 /* Header start */
 .up-header__left {
     /*padding-left: 10px;*/
@@ -7048,6 +7054,13 @@ footer .gmap iframe {
     margin-left: -15px;
     margin-right: -15px;
 }
+#mobm-left-content .mobile-menu-socials{
+    margin-top: auto;
+}
+#mobm-left-content .mobile-menu-socials + .desc_info_mob {
+    margin-top: 10px;
+}
+
 #mobm-left-content .desc_info_mob p{
     margin-bottom: 0;
 }

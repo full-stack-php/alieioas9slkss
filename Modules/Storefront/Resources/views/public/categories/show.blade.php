@@ -93,10 +93,10 @@
                         @if($products->isNotEmpty())
                             <div class="view-box">
                                 <div class="row">
-                                    <div class="col-6 d-md-none">
+                                    <div class="col-6 d-md-none py-1 px-3">
                                         <button
                                             type="button"
-                                            class="ocf-mobile-filter-btn"
+                                            class="ocf-mobile-filter-btn w-100 h-100"
                                             data-ocf-mobile-open
                                             aria-label="Открыть фильтр"
                                         >

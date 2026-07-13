@@ -65,6 +65,8 @@ class LayoutComposer
             'schemaMarkup' => $this->getSchemaMarkup(),
             'contactData' => $this->getContactData(),
             'repeat_btn' => $this->getRepeatBtn(),
+            'mobileMenuWorkingHours' => $this->getMobileMenuWorkingHours(),
+            'mobileMenuSocialLinks' => $this->getMobileMenuSocialLinks(),
             'schemaOrganization' => $this->getOrganizationSchema(),
             'schemaShipping' => $this->getShippingSchema(),
         ]);
@@ -291,28 +293,28 @@ class LayoutComposer
     private function getMobileMenuSocialLinks()
     {
         return collect([
-            'messenger' => [
-                'name' => trans('storefront::storefront.social_links.messenger'),
-                'url' => setting('storefront_facebook_link'),
-                'icon' => 'lab la-facebook-messenger',
-            ],
             'facebook' => [
                 'name' => trans('storefront::storefront.social_links.facebook'),
                 'url' => setting('storefront_facebook_page_link'),
-                'icon' => 'lab la-facebook-f',
+                'icon' => 'facebook',
             ],
             'instagram' => [
                 'name' => trans('storefront::storefront.social_links.instagram'),
                 'url' => setting('storefront_instagram_link'),
-                'icon' => 'lab la-instagram',
+                'icon' => 'instagram',
             ],
             'youtube' => [
                 'name' => trans('storefront::storefront.social_links.youtube'),
                 'url' => setting('storefront_youtube_link'),
-                'icon' => 'lab la-youtube',
+                'icon' => 'youtube',
             ],
         ])->filter(function ($item) {
             return !empty($item['url']);
         });
+    }
+
+    private function getMobileMenuWorkingHours()
+    {
+        return setting('storefront_mobile_menu_working_hours');
     }
 }
