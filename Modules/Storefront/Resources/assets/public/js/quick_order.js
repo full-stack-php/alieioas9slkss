@@ -1,18 +1,33 @@
 $(document).ready(function () {
-    let quickOrderModal = null;
-
     function getModal() {
-        const modalElement = document.getElementById('modal-quickorder');
+        return $('#modal-quickorder');
+    }
 
-        if (!modalElement) {
-            return null;
+    function showQuickOrderModal() {
+        const $modal = getModal();
+
+        if (!$modal.length) {
+            return;
         }
 
-        if (!quickOrderModal) {
-            quickOrderModal = new bootstrap.Modal(modalElement);
+        $modal.addClass('show').show();
+        $('body').addClass('modal-open');
+
+        if (!$('.modal-backdrop').length) {
+            $('body').append('<div class="modal-backdrop fade show"></div>');
+        }
+    }
+
+    function hideQuickOrderModal() {
+        const $modal = getModal();
+
+        if (!$modal.length) {
+            return;
         }
 
-        return quickOrderModal;
+        $modal.removeClass('show').hide();
+        $('body').removeClass('modal-open');
+        $('.modal-backdrop').remove();
     }
 
     function clearQuickOrderErrors() {
@@ -181,11 +196,7 @@ $(document).ready(function () {
 
         $('#htop_quickorder').val($('input[name="quantity"]').val() || 1);
 
-        const modal = getModal();
-
-        if (modal) {
-            modal.show();
-        }
+        showQuickOrderModal();
     });
 
     $(document).on('click', '.js-quick-order-qty-minus', function (e) {
@@ -202,6 +213,24 @@ $(document).ready(function () {
 
     $(document).on('change keyup', '#htop_quickorder', function () {
         normalizeQuantity();
+    });
+
+    $(document).on('click', '#modal-quickorder [data-bs-dismiss="modal"], #modal-quickorder .close-modal', function (e) {
+        e.preventDefault();
+
+        hideQuickOrderModal();
+    });
+
+    $(document).on('click', '#modal-quickorder', function (e) {
+        if (e.target === this) {
+            hideQuickOrderModal();
+        }
+    });
+
+    $(document).on('keyup', function (e) {
+        if (e.key === 'Escape' && $('#modal-quickorder').hasClass('show')) {
+            hideQuickOrderModal();
+        }
     });
 
     $(document).on('submit', '#fastorder_data', function (e) {
@@ -222,11 +251,7 @@ $(document).ready(function () {
             },
 
             success: function (response) {
-                const modal = getModal();
-
-                if (modal) {
-                    modal.hide();
-                }
+                hideQuickOrderModal();
 
                 if (typeof window.showModalWithMessage === 'function') {
                     window.showModalWithMessage(response.message);

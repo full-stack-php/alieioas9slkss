@@ -28,13 +28,22 @@ class ProductShowPageComposer
             'optionSets' => $this->divideOption($product),
             'banner' => Banner::getProductPageBanner(),
             'productSchemaMarkup' => $this->schemaMarkup($product),
-            'categoryBreadcrumb' => $this->getCategoryBreadCrumb($product->categories->nest()),
-            'allProductNotification' => setting('storefront_product_notify_message_status') ? setting('storefront_product_notify_message') : false,
+            'categoryBreadcrumb' => $this->getCategoryBreadCrumb(
+                $product->categories->nest()
+            ),
+            'allProductNotification' => setting(
+                'storefront_product_notify_message_status'
+            )
+                ? setting('storefront_product_notify_message')
+                : false,
+
             'productAvailability' => [
                 'is_preorder' => $product->isPreorder(),
                 'is_discontinued' => $product->isDiscontinued(),
                 'is_purchasable' => $product->isPurchasable(),
             ],
+
+            'manufacturerData' => $this->manufacturerData($product),
         ]);
     }
 
@@ -133,6 +142,24 @@ class ProductShowPageComposer
         return [
             'options' => $options,
             'mirrored' => $mirrored
+        ];
+    }
+
+    private function manufacturerData(Product $product): ?array
+    {
+        $manufacturer = $product->manufacturer;
+
+        if (!$manufacturer->exists || blank($manufacturer->slug)) {
+            $manufacturer = $product->brand;
+        }
+
+        if (!$manufacturer->exists || blank($manufacturer->slug)) {
+            return null;
+        }
+
+        return [
+            'name' => $manufacturer->name,
+            'url' => $manufacturer->url(),
         ];
     }
 }

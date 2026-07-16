@@ -1,18 +1,41 @@
 $(document).ready(function () {
-    let preorderModal = null;
-
     function getModal() {
-        const modalElement = document.getElementById('modal-preorder');
+        return $('#modal-preorder');
+    }
 
-        if (!modalElement) {
-            return null;
+    function showPreorderModal() {
+        const $modal = getModal();
+
+        if (!$modal.length) {
+            return;
         }
 
-        if (!preorderModal) {
-            preorderModal = new bootstrap.Modal(modalElement);
+        $modal
+            .addClass('show')
+            .attr('aria-hidden', 'false')
+            .show();
+
+        $('body').addClass('modal-open');
+
+        if (!$('.js-preorder-backdrop').length) {
+            $('body').append('<div class="modal-backdrop fade show js-preorder-backdrop"></div>');
+        }
+    }
+
+    function hidePreorderModal() {
+        const $modal = getModal();
+
+        if (!$modal.length) {
+            return;
         }
 
-        return preorderModal;
+        $modal
+            .removeClass('show')
+            .attr('aria-hidden', 'true')
+            .hide();
+
+        $('body').removeClass('modal-open');
+        $('.js-preorder-backdrop').remove();
     }
 
     function clearErrors() {
@@ -32,9 +55,7 @@ $(document).ready(function () {
     function showFieldErrors(errors) {
         Object.keys(errors).forEach(function (field) {
             const message = errors[field][0];
-            const $field = $('#preorder-form').find(
-                '[name="' + field + '"]'
-            );
+            const $field = $('#preorder-form').find('[name="' + field + '"]');
 
             if (!$field.length) {
                 showAlert(message);
@@ -45,11 +66,7 @@ $(document).ready(function () {
 
             $field
                 .closest('.form-group')
-                .append(
-                    '<div class="us-text-error">'
-                    + message
-                    + '</div>'
-                );
+                .append('<div class="us-text-error">' + message + '</div>');
         });
     }
 
@@ -64,10 +81,24 @@ $(document).ready(function () {
             form.reset();
         }
 
-        const modal = getModal();
+        showPreorderModal();
+    });
 
-        if (modal) {
-            modal.show();
+    $(document).on('click', '#modal-preorder [data-bs-dismiss="modal"], #modal-preorder .close-modal', function (event) {
+        event.preventDefault();
+
+        hidePreorderModal();
+    });
+
+    $(document).on('click', '#modal-preorder', function (event) {
+        if (event.target === this) {
+            hidePreorderModal();
+        }
+    });
+
+    $(document).on('keyup', function (event) {
+        if (event.key === 'Escape' && $('#modal-preorder').hasClass('show')) {
+            hidePreorderModal();
         }
     });
 
@@ -93,11 +124,7 @@ $(document).ready(function () {
             },
 
             success: function (response) {
-                const modal = getModal();
-
-                if (modal) {
-                    modal.hide();
-                }
+                hidePreorderModal();
 
                 $form[0].reset();
 
@@ -115,8 +142,7 @@ $(document).ready(function () {
                     return;
                 }
 
-                const message = xhr.responseJSON
-                && xhr.responseJSON.message
+                const message = xhr.responseJSON && xhr.responseJSON.message
                     ? xhr.responseJSON.message
                     : window.Korf.data.preorder_error;
 

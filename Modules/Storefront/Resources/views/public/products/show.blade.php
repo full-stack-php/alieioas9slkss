@@ -116,7 +116,15 @@
                                             </button>
                                         </div>
 
-                                        <div class="info-manufacturer">{{ trans('storefront::product.manufacturer') }}: <a href="{{ $product->brand->url() }}"><span>{{ $product->brand->name }}</span></a></div>
+                                        @if($manufacturerData)
+                                            <div class="info-manufacturer">
+                                                {{ trans('storefront::product.manufacturer') }}:
+
+                                                <a href="{{ $manufacturerData['url'] }}">
+                                                    <span>{{ $manufacturerData['name'] }}</span>
+                                                </a>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
 
