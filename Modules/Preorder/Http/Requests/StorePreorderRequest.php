@@ -2,7 +2,9 @@
 
 namespace Modules\Preorder\Http\Requests;
 
+use Illuminate\Validation\Rule;
 use Modules\Core\Http\Requests\Request;
+use Modules\Option\Entities\ProductOption;
 use Modules\Product\Entities\Product;
 
 class StorePreorderRequest extends Request
@@ -13,7 +15,7 @@ class StorePreorderRequest extends Request
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'product_id' => [
                 'required',
                 'integer',
@@ -25,7 +27,129 @@ class StorePreorderRequest extends Request
                 'string',
                 'max:50',
             ],
+
+            'options' => [
+                'nullable',
+                'array',
+            ],
+
+            'm_options' => [
+                'nullable',
+                'array',
+            ],
+
+            'secondary_options' => [
+                'nullable',
+                'array',
+            ],
+
+            'is_mirrored' => [
+                'nullable',
+                'boolean',
+            ],
+
+            'packaging_id' => [
+                'nullable',
+                'integer',
+            ],
         ];
+
+        $product = $this->product();
+
+        if (!$product) {
+            return $rules;
+        }
+
+        $rules['packaging_id'][] = Rule::in(
+            $product->packagings
+                ->pluck('id')
+                ->map(function ($id) {
+                    return (int) $id;
+                })
+                ->all()
+        );
+
+        foreach ($product->options as $option) {
+            $rules += $this->getOptionRules(
+                $option,
+                'options'
+            );
+
+            if ($this->boolean('is_mirrored')) {
+                $rules += $this->getOptionRules(
+                    $option,
+                    'secondary_options'
+                );
+            }
+        }
+
+        return $rules;
+    }
+
+    public function validationData(): array
+    {
+        $options = (array) $this->input(
+            'options',
+            []
+        );
+
+        $mirroredOptions = (array) $this->input(
+            'm_options',
+            []
+        );
+
+        return array_merge(
+            $this->all(),
+            [
+                'options' => $options,
+                'm_options' => $mirroredOptions,
+
+                'secondary_options' => $this->boolean(
+                    'is_mirrored'
+                )
+                    ? array_replace(
+                        $options,
+                        $mirroredOptions
+                    )
+                    : [],
+            ]
+        );
+    }
+
+    public function messages(): array
+    {
+        return array_merge(
+            [
+                'options.*.required' => trans(
+                    'preorder::messages.option_required'
+                ),
+
+                'secondary_options.*.required' => trans(
+                    'preorder::messages.option_required'
+                ),
+
+                'options.*.in' => trans(
+                    'preorder::messages.option_invalid'
+                ),
+
+                'secondary_options.*.in' => trans(
+                    'preorder::messages.option_invalid'
+                ),
+
+                'options.*.*.in' => trans(
+                    'preorder::messages.option_invalid'
+                ),
+
+                'secondary_options.*.*.in' => trans(
+                    'preorder::messages.option_invalid'
+                ),
+
+                'packaging_id.in' => trans(
+                    'preorder::messages.packaging_invalid'
+                ),
+            ],
+            parent::messages()
+        );
     }
 
     public function withValidator($validator): void
@@ -40,7 +164,9 @@ class StorePreorderRequest extends Request
             ) {
                 $validator->errors()->add(
                     'product_id',
-                    trans('preorder::messages.product_unavailable')
+                    trans(
+                        'preorder::messages.product_unavailable'
+                    )
                 );
             }
         });
@@ -58,7 +184,84 @@ class StorePreorderRequest extends Request
             return null;
         }
 
-        return $this->product = Product::withoutGlobalScope('active')
+        return $this->product = Product::withoutGlobalScope(
+            'active'
+        )
+            ->with([
+                'options.option',
+                'options.values.optionValue',
+                'packagings',
+            ])
             ->find($productId);
+    }
+
+    private function getOptionRules(
+        ProductOption $option,
+        string $prefix
+    ): array {
+        $key = "{$prefix}.{$option->id}";
+
+        $presenceRule = $option->is_required
+            ? 'required'
+            : 'nullable';
+
+        $valueIds = $option->values
+            ->pluck('id')
+            ->map(function ($id) {
+                return (int) $id;
+            })
+            ->all();
+
+        if (
+            in_array(
+                $option->type,
+                [
+                    'checkbox',
+                    'checkbox_custom',
+                ],
+                true
+            )
+        ) {
+            return [
+                $key => [
+                    $presenceRule,
+                    'array',
+                ],
+
+                "{$key}.*" => [
+                    'integer',
+                    Rule::in($valueIds),
+                ],
+            ];
+        }
+
+        if (
+            in_array(
+                $option->type,
+                [
+                    'dropdown',
+                    'radio',
+                    'radio_custom',
+                    'multiple_select',
+                ],
+                true
+            )
+        ) {
+            return [
+                $key => [
+                    $presenceRule,
+                    'integer',
+                    Rule::in($valueIds),
+                ],
+            ];
+        }
+
+        return [
+            $key => [
+                $presenceRule,
+                'string',
+                'max:1000',
+            ],
+        ];
     }
 }

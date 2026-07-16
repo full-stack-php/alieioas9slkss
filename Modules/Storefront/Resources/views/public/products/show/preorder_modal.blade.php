@@ -4,6 +4,8 @@
     tabindex="-1"
     role="dialog"
     aria-hidden="true"
+    data-options-required-message="{{ trans('preorder::messages.options_required') }}"
+    data-close-label="{{ trans('storefront::preorder.close') }}"
 >
     <div class="modal-dialog us-modal-lg chm-modal modal-dialog-centered">
         <form

@@ -14,6 +14,12 @@ Route::get('preorders/index/table', [
     'middleware' => 'can:admin.preorders.index',
 ]);
 
+Route::get('preorders/{id}', [
+    'as' => 'admin.preorders.show',
+    'uses' => 'PreorderController@show',
+    'middleware' => 'can:admin.preorders.show',
+]);
+
 Route::delete('preorders/{ids?}', [
     'as' => 'admin.preorders.destroy',
     'uses' => 'PreorderController@destroy',

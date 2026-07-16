@@ -14,8 +14,15 @@ class Preorder extends Model
     protected $fillable = [
         'product_id',
         'phone',
+        'options',
+        'packaging',
         'ip_address',
         'user_agent',
+    ];
+
+    protected $casts = [
+        'options' => 'array',
+        'packaging' => 'array',
     ];
 
     public function product()
@@ -26,8 +33,9 @@ class Preorder extends Model
             ->withTrashed();
     }
 
-    public function table(Request $request): PreorderTable
-    {
+    public function table(
+        Request $request
+    ): PreorderTable {
         $query = static::query()
             ->with('product')
             ->latest();
