@@ -70,15 +70,21 @@ class StorePreorderRequest extends Request
         );
 
         foreach ($product->options as $option) {
-            $rules += $this->getOptionRules(
-                $option,
-                'options'
+            $rules = array_merge(
+                $rules,
+                $this->getOptionRules(
+                    $option,
+                    'options'
+                )
             );
 
             if ($this->boolean('is_mirrored')) {
-                $rules += $this->getOptionRules(
-                    $option,
-                    'secondary_options'
+                $rules = array_merge(
+                    $rules,
+                    $this->getOptionRules(
+                        $option,
+                        'secondary_options'
+                    )
                 );
             }
         }
@@ -168,8 +174,121 @@ class StorePreorderRequest extends Request
                         'preorder::messages.product_unavailable'
                     )
                 );
+
+                return;
             }
+
+            $this->validateRequiredOptions(
+                $validator,
+                $product
+            );
         });
+    }
+
+    private function validateRequiredOptions(
+        $validator,
+        Product $product
+    ): void {
+        $primaryOptions = (array) $this->input(
+            'options',
+            []
+        );
+
+        foreach ($product->options as $option) {
+            if (!(bool) $option->is_required) {
+                continue;
+            }
+
+            $this->validateRequiredOption(
+                $validator,
+                $option,
+                $primaryOptions,
+                'options'
+            );
+        }
+
+        if (!$this->boolean('is_mirrored')) {
+            return;
+        }
+
+        $secondaryOptions = array_replace(
+            $primaryOptions,
+            (array) $this->input(
+                'm_options',
+                []
+            )
+        );
+
+        foreach ($product->options as $option) {
+            if (!(bool) $option->is_required) {
+                continue;
+            }
+
+            $this->validateRequiredOption(
+                $validator,
+                $option,
+                $secondaryOptions,
+                'secondary_options'
+            );
+        }
+    }
+
+    private function validateRequiredOption(
+        $validator,
+        ProductOption $option,
+        array $selectedOptions,
+        string $prefix
+    ): void {
+        $field = "{$prefix}.{$option->id}";
+
+        $value = array_key_exists(
+            $option->id,
+            $selectedOptions
+        )
+            ? $selectedOptions[$option->id]
+            : null;
+
+        if (!$this->optionValueIsEmpty($value)) {
+            return;
+        }
+
+        if ($validator->errors()->has($field)) {
+            return;
+        }
+
+        $validator->errors()->add(
+            $field,
+            trans(
+                'preorder::messages.option_required',
+                [
+                    'option' => $option->name,
+                ]
+            )
+        );
+    }
+
+    private function optionValueIsEmpty(
+        mixed $value
+    ): bool {
+        if (is_array($value)) {
+            if (empty($value)) {
+                return true;
+            }
+
+            foreach ($value as $item) {
+                if (!$this->optionValueIsEmpty($item)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if ($value === null) {
+            return true;
+        }
+
+        return trim((string) $value) === '';
     }
 
     public function product(): ?Product

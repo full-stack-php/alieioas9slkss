@@ -11,6 +11,11 @@ class ProductOption extends Model
     protected $fillable = ['product_id', 'option_id', 'is_required', 'position'];
     protected $appends = ['name', 'type'];
 
+    protected $casts = [
+        'is_required' => 'boolean',
+        'position' => 'integer',
+    ];
+
     public function option() {
         return $this->belongsTo(Option::class);
     }
