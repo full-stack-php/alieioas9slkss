@@ -205,7 +205,8 @@ export default class {
         }
 
         Sortable.create(element, {
-            handle: '.drag-icon',
+            handle: '.drag-handle',
+            draggable: 'tr',
             animation: 150,
 
             onEnd: () => {
