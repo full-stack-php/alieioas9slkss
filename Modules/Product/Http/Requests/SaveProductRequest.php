@@ -31,7 +31,40 @@ class SaveProductRequest extends Request
             $this->getProductOptionsRules(),
             $this->getProductVideoRules(),
             $this->getProductDocumentRules(),
+            $this->getFaqRules(),
         );
+    }
+
+    public function getFaqRules(): array
+    {
+        $rules = [
+            'faqs' => [
+                'nullable',
+                'array',
+            ],
+        ];
+
+        foreach (
+            supported_locales()
+            as $locale => $language
+        ) {
+            $rules["faqs.*.{$locale}"] = [
+                'required',
+                'array',
+            ];
+
+            $rules["faqs.*.{$locale}.question"] = [
+                'required',
+                'string',
+            ];
+
+            $rules["faqs.*.{$locale}.answer"] = [
+                'required',
+                'string',
+            ];
+        }
+
+        return $rules;
     }
 
 
@@ -203,6 +236,7 @@ class SaveProductRequest extends Request
         return [
             'attributes.*.attribute_id' => ['required_with:attributes.*.values', Rule::exists('attributes', 'id')],
             'attributes.*.values' => ['required_with:attributes.*.attribute_id', Rule::exists('attribute_values', 'id')],
+            'attributes.*.position' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
@@ -357,6 +391,24 @@ class SaveProductRequest extends Request
             $attributes["gift_packagings.*.{$locale}.name"] = trans('product::attributes.gift_packagings.name_with_locale', [
                 'locale' => $localeLabel,
             ]);
+
+            $attributes[
+            "faqs.*.{$locale}.question"
+            ] = trans(
+                'faq::attributes.question_with_locale',
+                [
+                    'locale' => $localeLabel,
+                ]
+            );
+
+            $attributes[
+            "faqs.*.{$locale}.answer"
+            ] = trans(
+                'faq::attributes.answer_with_locale',
+                [
+                    'locale' => $localeLabel,
+                ]
+            );
         }
 
         return array_merge($attributes, [

@@ -34,25 +34,51 @@ class ProductTabs extends Tabs
 
     private function general()
     {
-        return tap(new Tab('general', trans('product::products.tabs.general')), function (Tab $tab) {
-            $tab->active();
-            $tab->weight(5);
-            $tab->fields([
-                'name',
-                'h1_name',
-                'description',
-                'brand_id',
-                'manufacturer_id',
-                'main_category_id',
-                'categories',
-                'is_mirrored',
-                'is_active',
-            ]);
-            $tab->view('product::admin.products.tabs.general', [
-                'brands' => $this->brands(),
-                'categories' => Category::treeList(),
-            ]);
-        });
+        return tap(
+            new Tab(
+                'general',
+                trans('product::products.tabs.general')
+            ),
+            function (Tab $tab) {
+                $localizedFields = [];
+
+                foreach (
+                    array_keys(supported_locales())
+                    as $locale
+                ) {
+                    $localizedFields[] = "{$locale}.name";
+                    $localizedFields[] = "{$locale}.h1_name";
+                    $localizedFields[] = "{$locale}.description";
+                }
+
+                $tab->active();
+
+                $tab->weight(5);
+
+                $tab->fields(
+                    array_merge(
+                        $localizedFields,
+                        [
+                            'brand_id',
+                            'manufacturer_id',
+                            'main_category_id',
+                            'categories',
+                            'is_mirrored',
+                            'is_active',
+                        ]
+                    )
+                );
+
+                $tab->view(
+                    'product::admin.products.tabs.general',
+                    [
+                        'brands' => $this->brands(),
+
+                        'categories' => Category::treeList(),
+                    ]
+                );
+            }
+        );
     }
 
     private function brands()
@@ -193,10 +219,23 @@ class ProductTabs extends Tabs
 
     private function faq()
     {
-        return tap(new Tab('faq', trans('blog::post.tabs.faq')), function (Tab $tab) {
-            $tab->weight(90);
-            $tab->view('product::admin.products.tabs.faq');
-        });
+        return tap(
+            new Tab(
+                'faq',
+                trans('blog::post.tabs.faq')
+            ),
+            function (Tab $tab) {
+                $tab->weight(90);
+
+                $tab->fields([
+                    'faqs',
+                ]);
+
+                $tab->view(
+                    'product::admin.products.tabs.faq'
+                );
+            }
+        );
     }
 
     private function statuses()

@@ -41,24 +41,52 @@ class SaveProductAttributes
      *
      * @return void
      */
-    private function createProductAttributes(Product $product)
-    {
+    private function createProductAttributes(
+        Product $product
+    ): void {
         $productAttributeValues = [];
 
-        foreach (request('attributes', []) as $attribute) {
-            $productAttribute = $product->attributes()->create([
-                'attribute_id' => $attribute['attribute_id'],
-            ]);
+        foreach (
+            request('attributes', [])
+            as $index => $attribute
+        ) {
+            if (empty($attribute['attribute_id'])) {
+                continue;
+            }
 
-            foreach ($attribute['values'] as $valueId) {
+            $position = array_key_exists(
+                'position',
+                $attribute
+            )
+                ? max(0, (int) $attribute['position'])
+                : (int) $index;
+
+            $productAttribute = $product
+                ->attributes()
+                ->create([
+                    'attribute_id' => (int) $attribute[
+                    'attribute_id'
+                    ],
+
+                    'position' => $position,
+                ]);
+
+            foreach (
+                (array) ($attribute['values'] ?? [])
+                as $valueId
+            ) {
                 $productAttributeValues[] = [
-                    'product_attribute_id' => $productAttribute->id,
-                    'attribute_value_id' => $valueId,
+                    'product_attribute_id' =>
+                        $productAttribute->id,
+
+                    'attribute_value_id' => (int) $valueId,
                 ];
             }
         }
 
-        $this->createProductAttributeValues($productAttributeValues);
+        $this->createProductAttributeValues(
+            $productAttributeValues
+        );
     }
 
 

@@ -58,7 +58,10 @@ trait EloquentRelations
 
     public function attributes(): HasMany
     {
-        return $this->hasMany(ProductAttribute::class);
+        return $this
+            ->hasMany(ProductAttribute::class)
+            ->orderBy('position')
+            ->orderBy('id');
     }
 
     public function options(): HasMany

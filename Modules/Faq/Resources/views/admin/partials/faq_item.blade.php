@@ -17,13 +17,41 @@
     </div>
     <div class="card-body">
         <ul class="nav nav-pills">
-            @foreach (supported_locales() as $locale => $language)
-                <li class="nav-item">
-                    <a href="#faq-{{ $idKey }}-{{ $locale }}" data-bs-toggle="tab" aria-expanded="true" class="nav-link {{ $locale === locale() ? 'active' : '' }}">
-                        {{ $language['name'] }}
-                    </a>
-                </li>
-            @endforeach
+            <ul class="nav nav-pills">
+                @foreach (supported_locales() as $locale => $language)
+                    @php
+                        $hasLocaleErrors = $errors->has(
+                            "faqs.{$idKey}.{$locale}.*"
+                        );
+                    @endphp
+
+                    <li class="nav-item">
+                        <a
+                            href="#faq-{{ $idKey }}-{{ $locale }}"
+                            data-bs-toggle="tab"
+                            aria-expanded="true"
+                            class="
+                    nav-link
+                    {{ $locale === locale() ? 'active' : '' }}
+                    {{ $hasLocaleErrors ? 'has-error' : '' }}
+                "
+                        >
+                            {{ $language['name'] }}
+
+                            @if ($hasLocaleErrors)
+                                <i
+                                    class="
+                            bx bx-error
+                            fs-18
+                            align-middle
+                            ms-1
+                        "
+                                ></i>
+                            @endif
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
         </ul>
 
         <div class="tab-content pt-2 text-muted">

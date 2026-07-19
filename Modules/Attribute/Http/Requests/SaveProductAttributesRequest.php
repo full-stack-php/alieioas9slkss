@@ -25,6 +25,7 @@ class SaveProductAttributesRequest extends Request
         return [
             'attributes.*.attribute_id' => ['required_with:attributes.*.values', Rule::exists('attributes', 'id')],
             'attributes.*.values' => ['required_with:attributes.*.attribute_id', Rule::exists('attribute_values', 'id')],
+            'attributes.*.position' => ['nullable', 'integer', 'min:0'],
         ];
     }
 

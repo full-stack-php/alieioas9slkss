@@ -30,7 +30,14 @@ export default class {
 
         let $html = $(html);
         $('#product-attributes').append($html);
-        this.initChoicesInRow($html, idCount, attribute);
+
+        this.initChoicesInRow(
+            $html,
+            idCount,
+            attribute
+        );
+
+        this.updatePositions();
     }
 
     initChoicesInRow($row, attributeId, attributeData = {}) {
@@ -163,13 +170,18 @@ export default class {
 
     deleteProductAttribute(e) {
         const $tr = $(e.currentTarget).closest('tr');
+
         $tr.find('select').each((i, el) => {
             if (this.choicesInstances[el.id]) {
                 this.choicesInstances[el.id].destroy();
+
                 delete this.choicesInstances[el.id];
             }
         });
+
         $tr.remove();
+
+        this.updatePositions();
     }
 
     eventListeners() {
@@ -184,9 +196,31 @@ export default class {
 
 
     sortable() {
-        Sortable.create(document.getElementById('product-attributes'), {
+        const element = document.getElementById(
+            'product-attributes'
+        );
+
+        if (!element) {
+            return;
+        }
+
+        Sortable.create(element, {
             handle: '.drag-icon',
             animation: 150,
+
+            onEnd: () => {
+                this.updatePositions();
+            },
         });
+    }
+
+    updatePositions() {
+        $('#product-attributes > tr').each(
+            function (position) {
+                $(this)
+                    .find('.attribute-position')
+                    .val(position);
+            }
+        );
     }
 }

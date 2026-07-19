@@ -1,6 +1,13 @@
 <script type="text/html" id="product-attribute-template">
     <tr>
         <td class="text-center">
+            <input
+                type="hidden"
+                name="attributes[<%- attributeId %>][position]"
+                class="attribute-position"
+                value="<%- typeof attribute.position !== 'undefined' ? attribute.position : attributeId %>"
+            >
+
             <span class="drag-handle">
                 <i class="bx bx-expand-vertical"></i>
             </span>

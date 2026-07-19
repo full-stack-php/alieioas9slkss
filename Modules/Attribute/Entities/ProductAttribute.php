@@ -23,7 +23,17 @@ class ProductAttribute extends Model
      *
      * @var array
      */
-    protected $fillable = ['attribute_id','product_id'];
+    protected $fillable = [
+        'attribute_id',
+        'product_id',
+        'position',
+    ];
+
+
+    protected $casts = [
+        'position' => 'integer',
+    ];
+
     /**
      * The accessors to append to the model's array form.
      *
