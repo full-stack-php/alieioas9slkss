@@ -24,4 +24,6 @@ return [
     'your_cart_is_empty' => 'Your cart is empty',
     'looks_like_you_have_not_made_any_choice_yet' => 'Looks like you haven\'t made any choice yet.',
     'continue_shopping' => 'Continue Shopping',
+    'add_error' => 'Unable to add the product to the cart.',
+    'bundle_add_error' => 'Unable to add the bundle to the cart.',
 ];

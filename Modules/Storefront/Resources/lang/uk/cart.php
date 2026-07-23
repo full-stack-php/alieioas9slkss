@@ -26,4 +26,6 @@ return [
     'looks_like_you_have_not_made_any_choice_yet' => 'Ніколи не пізно це виправити :).',
     'continue_shopping' => 'Обрати товар',
     'use_coupon' => 'Застосувати промокод',
+    'add_error' => 'Не вдалося додати товар до кошика.',
+    'bundle_add_error' => 'Не вдалося додати комплект до кошика.',
 ];

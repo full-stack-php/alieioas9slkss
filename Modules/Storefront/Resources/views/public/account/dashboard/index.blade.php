@@ -12,9 +12,3 @@
             </div>
     @endif
 @endsection
-
-@push('globals')
-    @vite([
-        'Modules/Storefront/Resources/assets/public/sass/pages/account/dashboard/main.scss',
-    ])
-@endpush

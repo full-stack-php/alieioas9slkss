@@ -282,7 +282,10 @@ export default class Cart {
             url: this.routes.cart_add,
             data: payload
         }).fail((xhr) => {
-            alert(xhr.responseJSON?.message || 'Помилка при додаванні');
+            alert(
+                xhr.responseJSON?.message
+                || window.Korf.data.cartAddError
+            );
         });
     }
 
@@ -329,7 +332,10 @@ export default class Cart {
                 this.open($btn, response);
             },
             error: (xhr) => {
-                alert(xhr.responseJSON?.message || 'Помилка при додаванні набору');
+                alert(
+                    xhr.responseJSON?.message
+                    || window.Korf.data.bundleAddError
+                );
             },
             complete: () => {
                 $btn.prop('disabled', false).removeClass('loading');

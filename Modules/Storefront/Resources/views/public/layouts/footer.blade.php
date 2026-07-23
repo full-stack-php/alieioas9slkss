@@ -140,7 +140,7 @@
     </div>
 </footer>
 
-
+@include('storefront::public.partials.product_cart_popup_modal')
 
 <script src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
 
@@ -156,6 +156,10 @@
                 login_modal: '{{ route('login.modal') }}',
                 quick_order: '{{ route('quick_order.store') }}',
             },
+            product_cart_popup: @json(route('storefront.product_cart_popup.show',['product' => '__PRODUCT__'])),
+            productConfigurator: @json(trans('storefront::product_configurator')),
+            cartAddError: @json(trans('storefront::cart.add_error')),
+            bundleAddError: @json(trans('storefront::cart.bundle_add_error')),
             quick_order_error: @json(trans('storefront::quick_order.error')),
             preorder_error: @json(trans('storefront::preorder.error')),
             openLoginModal: @json((bool) session('open_login_modal')),

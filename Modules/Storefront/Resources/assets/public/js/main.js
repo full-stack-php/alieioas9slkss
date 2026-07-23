@@ -1,4 +1,5 @@
 import Cart from './cart.js';
+import ProductConfigurator from './product_configurator.js';
 import { getViewport } from './partials/viewport.js';
 import { initPhoneDropdown } from './partials/phoneDropdown.js';
 import { initMenuControl } from './partials/menu.js';
@@ -25,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.viewport = getViewport();
     let cart = new Cart();
 
-
+    new ProductConfigurator();
 
     initPhoneDropdown();
     initMobileContact();

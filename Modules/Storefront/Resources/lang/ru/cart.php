@@ -26,4 +26,6 @@ return [
     'looks_like_you_have_not_made_any_choice_yet' => 'Это никогда не поздно исправить :).',
     'continue_shopping' => 'Выбрать товар',
     'use_coupon' => 'Применить промокод',
+    'add_error' => 'Не удалось добавить товар в корзину.',
+    'bundle_add_error' => 'Не удалось добавить комплект в корзину.',
 ];

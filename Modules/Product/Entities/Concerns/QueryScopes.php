@@ -10,7 +10,10 @@ trait QueryScopes
             ->withName()
             ->withMedia()
             ->withPrice()
-            ->withCount('options')
+            ->withCount(
+                'options',
+                'packagings'
+            )
             ->with('reviews')
             ->withStock()
             ->withNew()

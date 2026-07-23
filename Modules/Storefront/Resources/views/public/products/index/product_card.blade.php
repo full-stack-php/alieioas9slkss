@@ -134,15 +134,20 @@
                 @else
                     <button
                         aria-label="{{ trans('storefront::product.buy') }}"
-                        class="btn btn-primary add_to_cart"
+                        class="btn btn-primary {{ ($product->options_count > 0 || $product->packagings_count > 0) ? 'js-product-configurator-open' : 'add_to_cart' }}"
                         type="button"
+                        data-product-id="{{ $product->id }}"
                     >
                         <svg class="icon icon-22">
                             <use xlink:href="#cart"></use>
                         </svg>
 
                         <span class="text-cart-add">
-                {{ trans('storefront::product.buy') }}
+                {{ trans(
+                    ($product->options_count > 0 || $product->packagings_count > 0)
+                        ? 'storefront::product_card.view_options'
+                        : 'storefront::product.buy'
+                ) }}
             </span>
                     </button>
                 @endif
@@ -241,21 +246,25 @@
                 <div class="product-card-discontinued">
                     {{ trans('storefront::preorder.discontinued') }}
                 </div>
-            @elseif($product->options_count === 0 || $product->isOutOfStock())
+            @elseif($product->isOutOfStock())
                 <button
                     class="btn btn-default btn-add-to-cart"
-                    {{ $product->isOutOfStock() ? 'disabled' : '' }}
-                    data-product-id="{{ $product->id }}"
+                    disabled
                 >
                     {{ trans('storefront::product_card.add_to_cart') }}
                 </button>
             @else
-                <a
-                    href="{{ $product->url() }}"
-                    class="btn btn-default btn-add-to-cart"
+                <button
+                    type="button"
+                    class="btn btn-default btn-add-to-cart {{ ($product->options_count > 0 || $product->packagings_count > 0) ? 'js-product-configurator-open' : 'add_to_cart' }}"
+                    data-product-id="{{ $product->id }}"
                 >
-                    {{ trans('storefront::product_card.view_options') }}
-                </a>
+                    {{ trans(
+                        ($product->options_count > 0 || $product->packagings_count > 0)
+                            ? 'storefront::product_card.view_options'
+                            : 'storefront::product_card.add_to_cart'
+                    ) }}
+                </button>
             @endif
         </div>
     </div>
